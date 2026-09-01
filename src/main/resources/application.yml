@@ -1,0 +1,98 @@
+spring:
+  application:
+    name: remockable-backend
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3307}/${DB_NAME:remockable}?useSSL=${DB_USE_SSL:false}&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=utf8&rewriteBatchedStatements=true
+    username: ${DB_USER:remockable}
+    password: ${DB_PASSWORD:remockable}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:20}
+      minimum-idle: 5
+      connection-timeout: 10000
+      pool-name: remockable-pool
+
+  jpa:
+    # Flyway 是 schema 的唯一來源；validate 會在啟動時擋下 Entity 與資料表不一致。
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  jackson:
+    # API 契約一律 snake_case（docs/openapi.yaml），Java 端維持 camelCase。
+    property-naming-strategy: SNAKE_CASE
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 30MB
+
+server:
+  # 預設 8081：本機的 8080 已被 Docker Desktop 佔用。
+  # 部署環境用 SERVER_PORT 覆寫。
+  port: ${SERVER_PORT:8081}
+  error:
+    whitelabel:
+      enabled: false
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId}] %logger{36} - %msg%n"
+  level:
+    com.remockable.api: ${LOG_LEVEL:INFO}
+
+remockable:
+  version: 0.1.0
+  limits:
+    # Spec 4.1.4.5：履歷 PDF 需小於 10 MB
+    max-resume-bytes: 10000000
+    max-audio-bytes: 25000000
+    # Spec D-014：每次回答限時 90 秒
+    max-answer-seconds: 90
+    # Spec 4.4.4.1：文字有效內容 100-2000 字元
+    min-answer-chars: 100
+    max-answer-chars: 2000
+    # Spec D-010：每個題目集的同一題型每日最多成功新增 3 題
+    daily-add-question-limit: 3
+    # Spec D-011：每個題型的數量上限為 20 題
+    max-questions-per-category: 20
+  cors:
+    allowed-origins:
+      - http://localhost:4174
+      - http://localhost:5173
+      - https://remockable-demo.pages.dev
+  providers:
+    llm:
+      api-key: ${LLM_API_KEY:}
+    stt:
+      api-key: ${STT_API_KEY:}

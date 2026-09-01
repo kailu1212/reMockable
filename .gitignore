@@ -1,0 +1,31 @@
+# Build
+target/
+build/
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+
+# Secrets and local config — 絕對不要提交
+.env
+.env.*
+!.env.example
+application-local.yml
+src/main/resources/application-local.yml
+
+# Runtime data — Spec §13.1：履歷、音檔、逐字稿視為敏感資料
+data/
+uploads/
+logs/
+*.log

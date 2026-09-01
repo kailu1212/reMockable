@@ -1,0 +1,1209 @@
+openapi: 3.0.3
+info:
+  title: reMockable Backend API
+  version: 0.1.0
+  description: |
+    reMockable MVP 後端 API。對應 Spec v0.8.0。
+
+    ## 認證
+    所有 endpoint 接受 `Authorization: Bearer <token>`。
+    - **P1A / P1B / P2A / P2B**：optional，後端忽略（以無帳號流程驗證）
+    - **P2C 起**：required，缺少或無效回 401 `ACCESS_DENIED`
+
+    ## 非同步 Job
+    所有呼叫 AI 模型的操作回 `202` + `job_id`，前端輪詢 `GET /jobs/{jobId}`。
+    詳見 `01-api-interface.md` §1.4。
+
+    ## 冪等
+    所有 POST 支援 `Idempotency-Key` header。相同 key 在 24 小時內重送回傳第一次的結果。
+  contact:
+    name: reMockable Backend
+servers:
+  - url: /api
+    description: 所有路徑均以 /api 為 base path
+
+tags:
+  - name: Meta
+    description: 健康檢查與非同步 Job 輪詢
+  - name: Auth
+    description: 登入 / 登出（P2C，9/17）
+  - name: JobPosting
+    description: 職缺資訊解析（Spec 4.1）
+  - name: Resume
+    description: 履歷上傳（Spec 4.1）
+  - name: MockSet
+    description: 建立面試資料（Spec 4.1）
+  - name: Question
+    description: 題型與題目（Spec 4.2 / 4.3）
+  - name: Attempt
+    description: 練習回答（Spec 4.4）
+  - name: Analysis
+    description: 分析結果（Spec 4.5）
+  - name: Event
+    description: 事件紀錄（S-04）
+
+security:
+  - bearerAuth: []
+  - {}
+
+paths:
+  /health:
+    get:
+      tags: [Meta]
+      summary: 服務與 provider 就緒狀態
+      description: 前端啟動時讀一次，取得 limits 作為驗證規則的唯一來源。
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+
+  /jobs/{jobId}:
+    get:
+      tags: [Meta]
+      summary: 輪詢非同步工作
+      description: |
+        依 response 的 `poll_after_ms` 決定下次輪詢時間（1500 → 2000 → 3000 → 5000ms）。
+        總輪詢上限 180 秒。Job 結果保留 24 小時。
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Job 狀態
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Job' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /auth/email/request:
+    post:
+      tags: [Auth]
+      summary: 寄送 Email 驗證信（P2C）
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email, example: you@example.com }
+      responses:
+        '200':
+          description: 已寄出
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [sent] }
+                  email: { type: string, format: email }
+                  expires_in: { type: integer, example: 900, description: 驗證連結有效秒數 }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /auth/email/verify:
+    post:
+      tags: [Auth]
+      summary: 驗證 Email token 並換取 access token（P2C）
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string, description: 驗證信連結帶的 token }
+      responses:
+        '200':
+          description: 登入成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthToken' }
+        '401': { $ref: '#/components/responses/AccessDenied' }
+        '410':
+          description: token 逾期（AUTH_TOKEN_EXPIRED）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /auth/google:
+    post:
+      tags: [Auth]
+      summary: Google OAuth 登入（P3）
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_token]
+              properties:
+                id_token: { type: string }
+      responses:
+        '200':
+          description: 登入成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthToken' }
+        '401': { $ref: '#/components/responses/AccessDenied' }
+
+  /me:
+    get:
+      tags: [Auth]
+      summary: 目前使用者與首頁導向資訊
+      description: |
+        `has_mockset = false` → 導向 4.1 建立面試資料；
+        `true` → 導向 4.2 選擇題型，並使用 `default_mockset_id`。
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+                  has_mockset: { type: boolean }
+                  default_mockset_id: { type: string, nullable: true }
+        '401': { $ref: '#/components/responses/AccessDenied' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: 登出（P2C）
+      responses:
+        '204': { description: 已登出，無回應內容 }
+
+  /job-postings/parse:
+    post:
+      tags: [JobPosting]
+      summary: 解析職缺資訊（非同步）
+      description: |
+        接受貼上的 JD 文字，或 CakeResume 職缺連結。
+        **本輪不支援 104 與 LinkedIn**，會回 `JOB_URL_NOT_SUPPORTED`。
+
+        後端也會自行判斷 `value` 是否為有效 http/https URL；
+        若與 `input_type` 不符，以實際內容為準。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [input_type, value]
+              properties:
+                input_type: { $ref: '#/components/schemas/JobInputType' }
+                value:
+                  type: string
+                  minLength: 1
+                  example: We are looking for a Product Manager to lead our billing product.
+      responses:
+        '202': { $ref: '#/components/responses/JobAccepted' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+
+  /job-postings/{id}:
+    get:
+      tags: [JobPosting]
+      summary: 重新取得解析結果
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobPostingParseResult' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /resumes:
+    post:
+      tags: [Resume]
+      summary: 上傳履歷 PDF（同步）
+      description: 僅接受 PDF，10 MB 以內。不呼叫 AI 模型，通常 2 秒內完成。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary, description: PDF 檔案，≤ 10 MB }
+      responses:
+        '201':
+          description: 上傳並抽取成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Resume' }
+        '413': { $ref: '#/components/responses/UploadTooLarge' }
+        '415':
+          description: 非 PDF（RESUME_UNSUPPORTED_TYPE）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '422':
+          description: 無法抽取文字（RESUME_EXTRACTION_FAILED / RESUME_EMPTY）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /mocksets:
+    post:
+      tags: [MockSet]
+      summary: 建立 Mock Set（同步）
+      description: |
+        只是凍結已解析好的 JD 與履歷，不呼叫模型。
+        **建立後 JD 與履歷即不可修改**（Spec M-04）— 因此沒有 PATCH endpoint。
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, job_posting_id, resume_id]
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  description: 練習名稱。建立後不得更改。
+                  example: PM (Northstar Labs)
+                job_posting_id: { type: string, example: jp_01J8X2K4M7 }
+                resume_id: { type: string, example: res_01J8X2K4M7 }
+      responses:
+        '201':
+          description: 建立成功
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MockSet' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409':
+          description: 超過 Mock Set 數量上限（MOCKSET_LIMIT_REACHED，P3 才啟用）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+    get:
+      tags: [MockSet]
+      summary: 列出 Mock Set
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mocksets:
+                    type: array
+                    items: { $ref: '#/components/schemas/MockSetSummary' }
+
+  /mocksets/{id}:
+    get:
+      tags: [MockSet]
+      summary: 取得 Mock Set
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MockSet' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [MockSet]
+      summary: 刪除 Mock Set（P3）
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '204': { description: 已刪除 }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /mocksets/{id}/question-sets:
+    get:
+      tags: [Question]
+      summary: 查詢該題型是否已有題目（沿用題目，M-07）
+      description: |
+        使用者在 4.2 點「下一步」時**先呼叫這支**。
+        已有題目就直接進 4.3，跳過 loading，也不會重複扣模型成本。
+
+        刻意用 `200 + exists:false` 而非 404，讓前端不必把「還沒生成」當錯誤處理。
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+        - name: category
+          in: query
+          required: true
+          schema: { $ref: '#/components/schemas/Category' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [exists]
+                properties:
+                  exists: { type: boolean }
+                  question_set:
+                    nullable: true
+                    allOf: [{ $ref: '#/components/schemas/QuestionSetSummary' }]
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Question]
+      summary: 生成 5 題（非同步，約 15-40 秒）
+      description: "若該 Mock Set + 題型已有題目，直接回 200 並帶 `reused: true`，不重新生成。"
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [category]
+              properties:
+                category: { $ref: '#/components/schemas/Category' }
+      responses:
+        '200':
+          description: 已有題目，直接沿用
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [READY] }
+                  question_set_id: { type: string }
+                  reused: { type: boolean, enum: [true] }
+        '202': { $ref: '#/components/responses/JobAccepted' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /question-sets/{id}:
+    get:
+      tags: [Question]
+      summary: 取得題目集與題目列表
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuestionSetDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /question-sets/{id}/questions:
+    post:
+      tags: [Question]
+      summary: 新增 1 題（非同步，P2B）
+      description: |
+        每次新增 1 題。每日上限 3 題，以「Mock Set＋題型」為單位。
+        **生成失敗不消耗當日額度** — 額度只在成功寫入題目時 +1。
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202': { $ref: '#/components/responses/JobAccepted' }
+        '409':
+          description: 該題型已達 20 題上限（QUESTION_LIMIT_REACHED）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '429':
+          description: 當日已成功新增 3 題（ADD_QUESTION_LIMIT_REACHED）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /questions/{id}:
+    get:
+      tags: [Question]
+      summary: 取得單題詳情
+      description: |
+        `attempt_count` 決定 4.4 顯示哪個按鈕：
+        `0` → 「生成參考答案」；`>= 1` → 「參考前次答案」。
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuestionDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /questions/{id}/attempts:
+    get:
+      tags: [Attempt]
+      summary: 取得該題所有回答（4.5「前一次回答」用）
+      description: |
+        只回 `state = ACTIVE` 的 attempt，依 `attempt_number` 升冪。
+        被重錄取代的 attempt 不會出現。保存上限 100 筆／題。
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  attempts:
+                    type: array
+                    items: { $ref: '#/components/schemas/Attempt' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Attempt]
+      summary: 建立一次回答（文字同步 / 語音非同步）
+      description: |
+        - **文字模式（P1B）**：`application/json`，回 `201` 與 attempt 本體
+        - **語音模式（P2B）**：`multipart/form-data`，回 `202` 與 job（因為要跑 STT）
+
+        **90 秒限制由前端 enforce。** 後端只驗文字長度，不會因為 `duration_seconds`
+        超過 90 而拒絕文字回答 — 該值來自瀏覽器，無法可信驗證。
+        語音則會用 ffprobe 驗證音檔真實長度。
+
+        **重錄取代規則**：同一題在分析完成前重新送出，舊的未分析 attempt 會被標為
+        `SUPERSEDED`，`attempt_number` 不跳號。
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [input_mode, content]
+              properties:
+                input_mode: { type: string, enum: [TEXT] }
+                content:
+                  type: string
+                  minLength: 100
+                  maxLength: 2000
+                  description: 僅允許英文字母、數字、空格、半形標點與換行
+                duration_seconds: { type: integer, minimum: 0, example: 78 }
+          multipart/form-data:
+            schema:
+              type: object
+              required: [input_mode, audio]
+              properties:
+                input_mode: { type: string, enum: [VOICE] }
+                audio:
+                  type: string
+                  format: binary
+                  description: 音檔 ≤ 25 MB；audio/webm, audio/ogg, audio/mp4, audio/mpeg, audio/wav
+                duration_seconds: { type: integer, minimum: 0 }
+      responses:
+        '201':
+          description: 文字回答建立成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  attempt: { $ref: '#/components/schemas/Attempt' }
+        '202': { $ref: '#/components/responses/JobAccepted' }
+        '400':
+          description: |
+            EMPTY_ANSWER / ANSWER_TOO_SHORT / ANSWER_TEXT_TOO_LONG /
+            ANSWER_TEXT_INVALID_CHARS / ANSWER_TOO_LONG
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '413': { $ref: '#/components/responses/UploadTooLarge' }
+        '415':
+          description: 音檔格式不支援（AUDIO_UNSUPPORTED_TYPE）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /attempts/{id}:
+    get:
+      tags: [Attempt]
+      summary: 取得一次回答
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  attempt: { $ref: '#/components/schemas/Attempt' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /questions/{id}/reference-answer:
+    get:
+      tags: [Attempt]
+      summary: 讀取已保存的參考答案（永不觸發生成）
+      description: |
+        對應 4.4「參考前次答案」。
+        **永遠不會呼叫模型、不會產生成本**（Spec AC-12）。
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reference_answer: { $ref: '#/components/schemas/ReferenceAnswer' }
+        '404':
+          description: 尚未生成過（NOT_FOUND）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+    post:
+      tags: [Attempt]
+      summary: 生成參考答案（非同步，P2A）
+      description: "若已存在，直接回 200 並帶 `reused: true`，不重新呼叫模型。"
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: 已存在，直接沿用
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [READY] }
+                  reused: { type: boolean, enum: [true] }
+                  reference_answer: { $ref: '#/components/schemas/ReferenceAnswer' }
+        '202': { $ref: '#/components/responses/JobAccepted' }
+        '409':
+          description: 業務規則不允許此時生成（REFERENCE_ANSWER_NOT_ALLOWED）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /attempts/{id}/analysis:
+    get:
+      tags: [Analysis]
+      summary: 取得分析結果
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  analysis: { $ref: '#/components/schemas/Analysis' }
+        '404':
+          description: 尚未分析（NOT_FOUND）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+    post:
+      tags: [Analysis]
+      summary: 執行分析（非同步，約 20-45 秒）
+      description: |
+        **前端不需指定是首次還是比較分析。** 後端自行判斷：
+        該題已有其他已完成分析 → `COMPARISON`（A02 prompt）；否則 → `FIRST`（A01）。
+
+        失敗時不保存不完整結果、不顯示假資料、不覆蓋已成功的資料（Spec AC-09）。
+        前端應留在 4.4 練習回答頁，保留原有回答與前一次分析結果。
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202': { $ref: '#/components/responses/JobAccepted' }
+        '400':
+          description: attempt 沒有內容（EMPTY_ANSWER）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /events:
+    post:
+      tags: [Event]
+      summary: 前端埋點
+      description: |
+        對應 Spec §15.1 的 28 個事件名。
+
+        **`metadata` 不得包含履歷內容、回答全文、逐字稿或任何個人資料**（Spec §13.1）。
+        超過 2 KB 的 metadata 會被拒絕。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [events]
+              properties:
+                events:
+                  type: array
+                  maxItems: 50
+                  items: { $ref: '#/components/schemas/ProductEvent' }
+      responses:
+        '202':
+          description: 已接收
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accepted: { type: integer, example: 1 }
+        '400': { $ref: '#/components/responses/ValidationError' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: P1A-P2B optional（後端忽略）；P2C 起 required
+
+  parameters:
+    ResourceId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+    JobId:
+      name: jobId
+      in: path
+      required: true
+      schema: { type: string }
+      example: job_01J8X2K4M7
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: |
+        UUID v4。相同 key 在 24 小時內重送會回傳第一次的結果，
+        不會重複建立資源或重複扣模型成本（Spec §13.3）。
+      schema: { type: string, format: uuid }
+
+  responses:
+    JobAccepted:
+      description: 已接受，非同步處理中。請輪詢 GET /jobs/{jobId}
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/JobAccepted' }
+    NotFound:
+      description: 資源不存在（NOT_FOUND）
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    ValidationError:
+      description: 參數驗證失敗（VALIDATION_ERROR）
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    AccessDenied:
+      description: 未認證或認證失敗（ACCESS_DENIED）
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    RateLimited:
+      description: 請求過於頻繁（RATE_LIMITED）
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    UploadTooLarge:
+      description: 檔案過大（UPLOAD_TOO_LARGE）
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  schemas:
+    Category:
+      type: string
+      enum: [INTRODUCTION, BEHAVIORAL, TECHNICAL, CULTURAL_FIT]
+      description: 自我介紹 / 行為問題 / 技術問題 / 文化契合
+    Difficulty:
+      type: string
+      enum: [EASY, MEDIUM, HARD]
+      description: 簡單 / 中等 / 困難
+    InputMode:
+      type: string
+      enum: [TEXT, VOICE]
+    JobInputType:
+      type: string
+      enum: [TEXT, URL]
+      description: 貼上文字 / 職缺連結（本輪僅支援 CakeResume）
+    FitState:
+      type: string
+      enum: [GREEN, YELLOW, RED]
+      description: |
+        綠燈 90 分以上 / 黃燈 60-89 分 / 紅燈未滿 60 分。
+        **API 不回傳 numeric score**（Spec D-025：Server 保存但 UI 不顯示數字）。
+    OverallState:
+      type: string
+      enum: [STRONG, ACCEPTABLE, NEEDS_IMPROVEMENT]
+    AnalysisType:
+      type: string
+      enum: [FIRST, COMPARISON]
+    JobStatus:
+      type: string
+      enum: [QUEUED, RUNNING, READY, FAILED]
+    JobType:
+      type: string
+      enum:
+        - JOB_POSTING_PARSE
+        - QUESTION_SET_GENERATION
+        - QUESTION_ADDITION
+        - ATTEMPT_TRANSCRIPTION
+        - REFERENCE_ANSWER_GENERATION
+        - ANSWER_ANALYSIS
+
+    Error:
+      type: object
+      required: [code, message_key, retryable]
+      properties:
+        code:
+          type: string
+          description: 穩定機器碼。前端用它決定行為。
+          example: JOB_PAGE_UNREADABLE
+        message_key:
+          type: string
+          description: |
+            文案索引鍵。**後端不回中文句子** —
+            中文文案由前端依 Spec §12 管理。
+          example: job_input_try_paste_text
+        retryable:
+          type: boolean
+          description: true 時前端應提供「請稍候再試」與重試入口
+        meta:
+          type: object
+          additionalProperties: true
+    ErrorResponse:
+      type: object
+      required: [status, error]
+      properties:
+        status: { type: string, enum: [failed] }
+        error: { $ref: '#/components/schemas/Error' }
+        request_id: { type: string, example: req_01J8X2K4M7 }
+
+    JobAccepted:
+      type: object
+      required: [job_id, status]
+      properties:
+        job_id: { type: string, example: job_01J8X2K4M7 }
+        status: { $ref: '#/components/schemas/JobStatus' }
+        poll_after_ms: { type: integer, example: 1500 }
+    Job:
+      type: object
+      required: [job_id, job_type, status]
+      properties:
+        job_id: { type: string }
+        job_type: { $ref: '#/components/schemas/JobType' }
+        status: { $ref: '#/components/schemas/JobStatus' }
+        progress: { type: number, format: float, minimum: 0, maximum: 1, example: 0.4 }
+        elapsed_ms: { type: integer, example: 12034 }
+        poll_after_ms:
+          type: integer
+          description: 下次輪詢建議間隔。退避策略 1500 → 2000 → 3000 → 5000ms。
+          example: 2000
+        result:
+          nullable: true
+          description: |
+            status = READY 時有值。形狀依 job_type 而定：
+            JOB_POSTING_PARSE → JobPostingParseResult；
+            QUESTION_SET_GENERATION → QuestionSetDetail；
+            QUESTION_ADDITION → { question, quota }；
+            ATTEMPT_TRANSCRIPTION → { attempt }；
+            REFERENCE_ANSWER_GENERATION → { reference_answer }；
+            ANSWER_ANALYSIS → { analysis }
+          oneOf:
+            - $ref: '#/components/schemas/JobPostingParseResult'
+            - $ref: '#/components/schemas/QuestionSetDetail'
+            - $ref: '#/components/schemas/QuestionAdditionResult'
+            - $ref: '#/components/schemas/AttemptResult'
+            - $ref: '#/components/schemas/ReferenceAnswerResult'
+            - $ref: '#/components/schemas/AnalysisResult'
+        error:
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/Error' }]
+        created_at: { type: string, format: date-time }
+        finished_at: { type: string, format: date-time, nullable: true }
+
+    Health:
+      type: object
+      properties:
+        status: { type: string, enum: [ok] }
+        service: { type: string, example: remockable-api }
+        version: { type: string, example: 0.1.0 }
+        request_id: { type: string }
+        uptime_seconds: { type: integer }
+        providers:
+          type: object
+          properties:
+            llm:
+              type: object
+              properties: { configured: { type: boolean } }
+            stt:
+              type: object
+              properties: { configured: { type: boolean } }
+        limits:
+          type: object
+          description: 前端驗證規則的唯一來源。不要把數字寫死在程式碼裡。
+          properties:
+            max_resume_bytes: { type: integer, example: 10000000 }
+            max_audio_bytes: { type: integer, example: 25000000 }
+            max_answer_seconds: { type: integer, example: 90 }
+            min_answer_chars: { type: integer, example: 100 }
+            max_answer_chars: { type: integer, example: 2000 }
+            daily_add_question_limit: { type: integer, example: 3 }
+            max_questions_per_category: { type: integer, example: 20 }
+
+    User:
+      type: object
+      properties:
+        id: { type: string, example: usr_01J8X2K4M7 }
+        email: { type: string, format: email }
+        display_name: { type: string }
+        avatar_letter:
+          type: string
+          maxLength: 1
+          description: Header 頭像顯示的第一個字（Spec 4.6.4.8）
+    AuthToken:
+      type: object
+      properties:
+        access_token: { type: string }
+        token_type: { type: string, enum: [Bearer] }
+        expires_in: { type: integer, example: 2592000 }
+        user: { $ref: '#/components/schemas/User' }
+
+    JobPostingExtraction:
+      type: object
+      description: |
+        **無法擷取的欄位一律回 `null`** — 不回空字串、不回預設值、不編造內容
+        （Spec D-021、AC-02）。前端把 null 顯示為 `--`。
+      properties:
+        job_title: { type: string, nullable: true, example: Product Manager }
+        company_name: { type: string, nullable: true, example: Northstar Labs }
+        industry: { type: string, nullable: true, example: SaaS / B2B 軟體 }
+        experience: { type: string, nullable: true, example: 3 年以上產品管理經驗 }
+        job_description: { type: string, nullable: true }
+        requirements: { type: string, nullable: true }
+    JobPostingParseResult:
+      type: object
+      properties:
+        job_posting_id: { type: string, example: jp_01J8X2K4M7 }
+        input_type: { $ref: '#/components/schemas/JobInputType' }
+        source_url: { type: string, nullable: true }
+        extraction: { $ref: '#/components/schemas/JobPostingExtraction' }
+        extracted_field_count:
+          type: integer
+          description: 直接用在「已讀取 x 個欄位」
+          example: 5
+        missing_fields:
+          type: array
+          items: { type: string }
+          example: [requirements]
+
+    Resume:
+      type: object
+      properties:
+        resume_id: { type: string, example: res_01J8X2K4M7 }
+        filename: { type: string, example: andre-hung-resume-2026.pdf }
+        byte_size: { type: integer, example: 842113 }
+        page_count: { type: integer, example: 2 }
+        extracted_char_count: { type: integer, example: 4821 }
+        status: { type: string, enum: [READY] }
+
+    MockSetSummary:
+      type: object
+      properties:
+        id: { type: string, example: ms_01J8X2K4M7 }
+        name: { type: string, example: PM (Northstar Labs) }
+        status: { type: string, enum: [READY] }
+        created_at: { type: string, format: date-time }
+    MockSet:
+      allOf:
+        - $ref: '#/components/schemas/MockSetSummary'
+        - type: object
+          properties:
+            job_posting:
+              allOf:
+                - $ref: '#/components/schemas/JobPostingExtraction'
+                - type: object
+                  properties:
+                    id: { type: string }
+                    source_url: { type: string, nullable: true }
+            resume:
+              type: object
+              properties:
+                id: { type: string }
+                filename: { type: string }
+
+    QuestionSetSummary:
+      type: object
+      properties:
+        id: { type: string, example: qs_01J8X2K4M7 }
+        mockset_id: { type: string }
+        category: { $ref: '#/components/schemas/Category' }
+        status: { type: string, enum: [READY] }
+        question_count: { type: integer, example: 5 }
+    Quota:
+      type: object
+      description: 每日新增題目額度，以「Mock Set＋題型」為單位。生成失敗不消耗額度。
+      properties:
+        used: { type: integer, example: 0 }
+        limit: { type: integer, example: 3 }
+        remaining: { type: integer, example: 3 }
+        reset_at: { type: string, format: date-time, example: '2026-09-11T00:00:00+08:00' }
+    Question:
+      type: object
+      properties:
+        id: { type: string, example: q_01J8X2K4M7 }
+        position:
+          type: integer
+          description: 從 1 開始。前端顯示為兩位數編號 01、02……
+          example: 1
+        question_text:
+          type: string
+          example: Why are you interested in this Product Manager role?
+        question_translation:
+          type: string
+          description: 繁體中文翻譯，顯示在題目卡 supporting text（Spec D-031、AC-11）
+          example: 你為什麼對這個產品經理職位有興趣？
+        difficulty: { $ref: '#/components/schemas/Difficulty' }
+        origin: { type: string, enum: [INITIAL, ADDED] }
+        attempt_count: { type: integer, example: 0 }
+        has_reference_answer: { type: boolean }
+    QuestionDetail:
+      allOf:
+        - $ref: '#/components/schemas/Question'
+        - type: object
+          properties:
+            question_set_id: { type: string }
+            mockset_id: { type: string }
+            category: { $ref: '#/components/schemas/Category' }
+            latest_attempt_id: { type: string, nullable: true }
+            reference_answer_source:
+              type: string
+              nullable: true
+              enum: [USER_REQUESTED, FROM_ANALYSIS, null]
+    QuestionSetDetail:
+      type: object
+      properties:
+        question_set: { $ref: '#/components/schemas/QuestionSetSummary' }
+        quota: { $ref: '#/components/schemas/Quota' }
+        questions:
+          type: array
+          items: { $ref: '#/components/schemas/Question' }
+    QuestionAdditionResult:
+      type: object
+      properties:
+        question: { $ref: '#/components/schemas/Question' }
+        quota: { $ref: '#/components/schemas/Quota' }
+
+    TranscriptSegment:
+      type: object
+      description: 逐字稿時間序。文字模式回空陣列。
+      properties:
+        seq: { type: integer, example: 1 }
+        start_ms: { type: integer, example: 0 }
+        end_ms: { type: integer, example: 4200 }
+        text: { type: string, example: I am interested in this role }
+    Attempt:
+      type: object
+      properties:
+        id: { type: string, example: att_01J8X2K4M7 }
+        question_id: { type: string }
+        attempt_number: { type: integer, example: 1 }
+        input_mode: { $ref: '#/components/schemas/InputMode' }
+        content:
+          type: string
+          description: |
+            實際送去分析的內容。文字模式為使用者輸入；
+            語音模式為 STT 逐字稿（**不可編輯**，Spec D-016、M-10）。
+        segments:
+          type: array
+          items: { $ref: '#/components/schemas/TranscriptSegment' }
+        duration_seconds:
+          type: integer
+          description: |
+            瀏覽器計時秒數。後端保存供分析與觀測使用，
+            但**不會因為它超過 90 秒而拒絕文字回答**（無法可信驗證）。
+          example: 78
+        transcript_status:
+          type: string
+          enum: [NOT_APPLICABLE, PENDING, CONFIRMED, FAILED]
+        analysis_status:
+          type: string
+          enum: [PENDING, READY, FAILED]
+        state:
+          type: string
+          enum: [ACTIVE, SUPERSEDED]
+          description: 分析完成前重新送出，舊的未分析 attempt 會被標為 SUPERSEDED
+        created_at: { type: string, format: date-time }
+    AttemptResult:
+      type: object
+      properties:
+        attempt: { $ref: '#/components/schemas/Attempt' }
+
+    ReferenceAnswer:
+      type: object
+      properties:
+        question_id: { type: string }
+        source:
+          $ref: '#/components/schemas/ReferenceAnswerSource'
+        text:
+          type: string
+          maxLength: 2000
+          description: 英文參考答案，最多 2000 字元（含空格換行，Spec §17.4）
+        outline:
+          type: array
+          items: { type: string }
+        practice_tip: { type: string }
+        requires_user_fill:
+          type: boolean
+          description: true 表示內容含 placeholder，前端應提示使用者自行補上個人經歷
+        placeholders:
+          type: array
+          items: { type: string }
+          example: ['(此處需引述個人經歷，請自行填入)']
+          description: |
+            固定標記。**AI 不得編造使用者未提供的經歷、成果或指標**
+            （Spec AC-14、§4.7.4）。
+        is_editable:
+          type: boolean
+          enum: [false]
+          description: 恆為 false。參考答案不可選取、複製或編輯（Spec D-018、AC-12）。
+        created_at: { type: string, format: date-time }
+    ReferenceAnswerSource:
+      type: string
+      enum: [USER_REQUESTED, FROM_ANALYSIS]
+      description: 使用者點擊生成 / 分析產出
+    ReferenceAnswerResult:
+      type: object
+      properties:
+        reference_answer: { $ref: '#/components/schemas/ReferenceAnswer' }
+
+    Fit:
+      type: object
+      properties:
+        state: { $ref: '#/components/schemas/FitState' }
+        evidence:
+          type: string
+          description: 來自使用者回答的英文原句引用。不改寫、不補完。
+        reason:
+          type: string
+          description: 繁體中文，兩到三句，針對這次回答判斷此 Fit。
+        signal:
+          type: string
+          description: 繁體中文一句話，告訴使用者下次要補什麼或改什麼。
+    PriorityImprovement:
+      type: object
+      description: |
+        **只回一項最優先改善**（Spec AC-06）。
+        `reference_answer` 只出現在 FIRST 分析；COMPARISON 分析不提供
+        （Spec §17.2：第二輪應讓使用者用自己的話持續練習）。
+      properties:
+        title: { type: string, description: 繁體中文標題 }
+        summary: { type: string, description: 繁體中文一句話 }
+        user_answer_evidence:
+          type: string
+          description: 引用本次回答中與此建議相關的英文原文
+        why_it_matters: { type: string, description: 繁體中文 }
+        next_instruction_title: { type: string, description: 繁體中文祈使句 }
+        next_instruction_detail: { type: string, description: 繁體中文 }
+        example_sentence:
+          type: string
+          description: 英文句型。需要個人經歷處使用固定 placeholder。
+        reference_answer:
+          type: string
+          nullable: true
+          description: 僅 FIRST 分析提供
+    Comparison:
+      type: object
+      properties:
+        previous_attempt_id: { type: string }
+        improved:
+          type: array
+          description: |
+            **可能是空陣列。** 第二次回答若沒有真的改善，模型不會編造進步
+            （Spec A02 rules）。前端要能處理空陣列。
+          items:
+            type: object
+            properties:
+              area: { type: string, description: 繁體中文 }
+              explanation: { type: string, description: 繁體中文 }
+              before: { type: string, description: 第一次回答的英文片段 }
+              after: { type: string, description: 第二次回答的英文片段 }
+        not_yet_improved:
+          type: array
+          items: { type: string, description: 繁體中文 }
+    Analysis:
+      type: object
+      properties:
+        id: { type: string, example: ana_01J8X2K4M7 }
+        attempt_id: { type: string }
+        analysis_type: { $ref: '#/components/schemas/AnalysisType' }
+        overall_state: { $ref: '#/components/schemas/OverallState' }
+        fits:
+          type: object
+          properties:
+            jd_fit:
+              allOf: [{ $ref: '#/components/schemas/Fit' }]
+              description: |
+                職缺契合度。輸入為 JD + 履歷 + **這一題** + **這次的回答**，
+                因此同一份 JD 下不同題目／不同回答會得到不同結果。
+            answer_fit:
+              allOf: [{ $ref: '#/components/schemas/Fit' }]
+              description: 答案契合度。是否真的回答了問題，有情境、行動與結果。
+            delivery_fit:
+              allOf: [{ $ref: '#/components/schemas/Fit' }]
+              description: |
+                表達契合度。**只評英文詞彙、文法、句構與清晰度。**
+                不評估發音、腔調、語速、停頓、填充詞或自信度
+                （Spec §5.3 明列為 Out of Scope；模型只拿到逐字稿）。
+        priority_improvement: { $ref: '#/components/schemas/PriorityImprovement' }
+        comparison:
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/Comparison' }]
+        created_at: { type: string, format: date-time }
+    AnalysisResult:
+      type: object
+      properties:
+        analysis: { $ref: '#/components/schemas/Analysis' }
+
+    ProductEvent:
+      type: object
+      required: [name, occurred_at]
+      properties:
+        name:
+          type: string
+          description: Spec §15.1 定義的事件名
+          example: question_selected
+        occurred_at: { type: string, format: date-time }
+        mockset_id: { type: string, nullable: true }
+        question_id: { type: string, nullable: true }
+        attempt_id: { type: string, nullable: true }
+        status: { type: string, nullable: true }
+        error_code: { type: string, nullable: true }
+        latency_ms: { type: integer, nullable: true }
+        metadata:
+          type: object
+          maxProperties: 20
+          additionalProperties: true
+          description: |
+            **不得包含履歷內容、回答全文、逐字稿或任何個人資料**（Spec §13.1）。
+            超過 2 KB 會被拒絕。
