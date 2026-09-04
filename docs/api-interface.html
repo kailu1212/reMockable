@@ -1,0 +1,2709 @@
+<title>reMockable API 介面規格</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #eef2f5; --surface: #ffffff; --surface-2: #f6f9fb;
+    --ink: #171b21; --ink-muted: #565f6e; --line: #d7dee6;
+    --accent: #1f6e8c; --accent-tint: #e2eef2;
+    --warn-fg: #9a4b12; --warn-bg: #fbe9d6;
+    --danger-fg: #a3324e; --danger-bg: #f8e2e8;
+    --ok-fg: #17724f; --ok-bg: #dff1e7;
+    --draft-fg: #8a5a0d; --draft-bg: #f8ecd6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151a; --surface: #1b1f26; --surface-2: #20252d;
+      --ink: #e8ecf1; --ink-muted: #9aa5b4; --line: #323944;
+      --accent: #74bcdb; --accent-tint: #1c2c33;
+      --warn-fg: #f0b071; --warn-bg: #3a2812;
+      --danger-fg: #f2a6b8; --danger-bg: #3a1f27;
+      --ok-fg: #7fdcb0; --ok-bg: #16302a;
+      --draft-fg: #eac878; --draft-bg: #332912;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12151a; --surface: #1b1f26; --surface-2: #20252d;
+    --ink: #e8ecf1; --ink-muted: #9aa5b4; --line: #323944;
+    --accent: #74bcdb; --accent-tint: #1c2c33;
+    --warn-fg: #f0b071; --warn-bg: #3a2812;
+    --danger-fg: #f2a6b8; --danger-bg: #3a1f27;
+    --ok-fg: #7fdcb0; --ok-bg: #16302a;
+    --draft-fg: #eac878; --draft-bg: #332912;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink);
+    font-family: "Noto Sans TC","Hiragino Sans","PingFang TC",sans-serif; line-height: 1.68; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 52px 24px 96px; }
+  .mono, code, pre { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace; }
+
+  .masthead { display:flex; flex-direction:column; gap:14px;
+    padding-bottom:26px; border-bottom:2px solid var(--ink); margin-bottom:8px; }
+  .eyebrow { font-size:12.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--accent); font-weight:600; }
+  h1 { font-size:clamp(28px,4vw,40px); font-weight:900; margin:0;
+    letter-spacing:-.01em; text-wrap:balance; }
+  .lede { max-width:66ch; color:var(--ink-muted); font-size:15.5px; margin:0; }
+  .stamp { display:inline-flex; align-items:center; gap:8px; width:fit-content;
+    font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:600;
+    letter-spacing:.08em; padding:4px 12px; border-radius:999px;
+    color:var(--draft-fg); background:var(--draft-bg); border:1px solid var(--draft-fg); }
+  .meta-row { display:flex; flex-wrap:wrap; gap:8px 22px; font-size:12.5px; color:var(--ink-muted); }
+  .meta-row b { color:var(--ink); font-weight:600; }
+
+  .toc { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:10px; margin:28px 0 8px; }
+  .toc a { text-decoration:none; color:var(--ink); background:var(--surface);
+    border:1px solid var(--line); border-radius:9px; padding:12px 14px;
+    display:flex; flex-direction:column; gap:2px;
+    transition:border-color .15s ease, color .15s ease; }
+  .toc a:hover, .toc a:focus-visible { border-color:var(--accent); color:var(--accent); }
+  .toc .n { font-family:"JetBrains Mono",monospace; font-size:11.5px; color:var(--ink-muted); }
+  .toc .t { font-weight:600; font-size:14.5px; }
+
+  h2.chapter { font-size:25px; font-weight:900; margin:56px 0 6px;
+    padding-bottom:10px; border-bottom:2px solid var(--ink); letter-spacing:-.01em; }
+  .chapter-note { color:var(--ink-muted); font-size:14px; margin:0 0 20px; max-width:68ch; }
+
+  h3 { font-size:18.5px; font-weight:700; margin:34px 0 8px; text-wrap:balance; }
+  h4 { font-size:15.5px; font-weight:700; margin:24px 0 6px; color:var(--ink); }
+  h5 { font-size:14px; font-weight:600; margin:18px 0 6px; color:var(--ink-muted); }
+  p { margin:10px 0; max-width:72ch; }
+
+  code { font-size:.9em; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:4px; padding:1px 5px; }
+  pre { background:var(--surface-2); border:1px solid var(--line);
+    border-left:3px solid var(--accent); border-radius:7px;
+    padding:13px 15px; overflow-x:auto; font-size:12.6px; line-height:1.6; margin:12px 0; }
+  pre code { background:none; border:none; padding:0; font-size:inherit; }
+
+  table { border-collapse:collapse; width:100%; margin:14px 0; font-size:13.2px;
+    font-variant-numeric:tabular-nums; }
+  th { background:var(--surface-2); text-align:left; font-weight:600; }
+  th, td { border:1px solid var(--line); padding:7px 10px; vertical-align:top; }
+  .scroll-x { overflow-x:auto; }
+
+  blockquote { margin:14px 0; padding:11px 15px; background:var(--warn-bg);
+    border-left:3px solid var(--warn-fg); border-radius:0 7px 7px 0; font-size:13.6px; }
+  blockquote p { margin:0 0 6px; max-width:none; } blockquote p:last-child { margin:0; }
+
+  hr { border:none; border-top:1px solid var(--line); margin:30px 0; }
+  ul, ol { padding-left:22px; max-width:72ch; } li { margin:4px 0; }
+  a { color:var(--accent); }
+
+  .flow { margin:32px 0; }
+  .flow-head { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+  .flow-num { font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--ink-muted); }
+  .flow-head h3 { margin:0; }
+  .blurb { color:var(--ink-muted); font-size:14px; margin:0; max-width:72ch; }
+  .diagram-frame { border:1px solid var(--line); border-radius:10px;
+    background:var(--surface); padding:20px; overflow-x:auto; }
+  .diagram-frame pre.mermaid { margin:0; min-width:max-content;
+    background:none; border:none; padding:0; }
+
+  .vh caption { text-align:left; font-weight:700; font-size:15px;
+    padding-bottom:8px; color:var(--ink); }
+  footer { margin-top:56px; padding-top:22px; border-top:1px solid var(--line);
+    font-size:12.5px; color:var(--ink-muted);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+
+  /* ── Endpoint 規格 ── */
+  h3.sec { font-size:17px; font-weight:800; margin:44px 0 4px; color:var(--accent);
+    border-bottom:1px solid var(--line); padding-bottom:6px; }
+  .ep { border:1px solid var(--line); border-radius:11px; background:var(--surface);
+    padding:20px 22px; margin:20px 0; }
+  .ephead { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 6px; }
+  .mth { font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:700;
+    letter-spacing:.05em; padding:3px 9px; border-radius:4px; color:#fff; }
+  .mGET{background:#1f6e8c}.mPOST{background:#17724f}
+  .mDELETE{background:#a3324e}.mPUT,.mPATCH{background:#8a5a0d}
+  .path { font-family:"JetBrains Mono",monospace; font-size:15px; font-weight:600;
+    background:none; border:none; padding:0; color:var(--ink); }
+  .pill { font-size:11px; font-weight:600; padding:2px 9px; border-radius:999px;
+    font-family:"JetBrains Mono",monospace; }
+  .pill.sync { color:var(--ok-fg); background:var(--ok-bg); }
+  .pill.async { color:var(--accent); background:var(--accent-tint); }
+  .epsum { color:var(--ink-muted); font-size:14px; margin:0 0 8px; }
+  .epnotes { font-size:13.6px; }
+  .epnotes p, .epnotes ul { margin:8px 0; }
+  .part { font-weight:700; font-size:13.5px; margin:20px 0 6px; padding-bottom:5px;
+    border-bottom:2px solid var(--line); letter-spacing:.02em; }
+  .tcap { font-size:12.5px; font-weight:600; color:var(--ink-muted); margin:12px 0 4px; }
+  .fieldtable table { font-size:12.6px; }
+  td.ty { font-family:"JetBrains Mono",monospace; font-size:11.8px; color:var(--ink-muted); }
+  td.ty .fmt { opacity:.7; }
+  td.rq, th:last-child { }
+  td.rq { text-align:center; font-size:12px; }
+  td.st { text-align:center; font-family:"JetBrains Mono",monospace; font-weight:600; }
+  td.st4 { color:var(--warn-fg); } td.st5 { color:var(--danger-fg); }
+  p.none { font-size:13px; color:var(--ink-muted); margin:6px 0; }
+  p.miss { color:var(--danger-fg); font-weight:600; }
+  .pill.dual { color:var(--warn-fg); background:var(--warn-bg); }
+  .part.sub { font-size:12.6px; border-bottom:1px dashed var(--line); margin-top:16px;
+    color:var(--ink-muted); font-weight:600; }
+  p.dualnote { font-size:13px; background:var(--warn-bg); border-left:3px solid var(--warn-fg);
+    border-radius:0 6px 6px 0; padding:9px 13px; margin:8px 0 4px; max-width:none; }
+  ul.ac { list-style:none; padding-left:0; margin:8px 0; max-width:none; }
+  ul.ac li { position:relative; padding-left:26px; margin:5px 0; font-size:13px; }
+  ul.ac li::before { content:""; position:absolute; left:0; top:4px; width:13px; height:13px;
+    border:1.5px solid var(--ink-muted); border-radius:3px; }
+  .ep pre { font-size:12.2px; }
+
+  @media print { .toc { break-inside:avoid; } .flow, table, pre { break-inside:avoid; } }
+</style>
+
+<div class="wrap">
+  <div class="masthead">
+    <div class="eyebrow">reMockable · Backend → Frontend</div>
+    <h1>API 介面規格</h1>
+    <span class="stamp">DRAFT · 尚未發布</span>
+    <p class="lede">
+      前端串接 reMockable 後端所需的完整資訊：回應包裝、認證、冪等、非同步輪詢、
+      錯誤碼、呼叫順序，以及 27 支 endpoint 的請求與回應定義。這份文件自成完整，
+      不需要搭配其他規格文件閱讀。
+    </p>
+    <div class="meta-row">
+      <span>Base path <b>/api</b></span>
+      <span>命名 <b>camelCase</b></span>
+      <span>Endpoint <b>27 支</b></span>
+      <span>錯誤碼 <b>33 個</b></span>
+      <span>機器可讀規格 <b>docs/openapi.yaml</b></span>
+    </div>
+  </div>
+
+  <nav class="toc">
+    <a href="#c1"><span class="n">1</span><span class="t">怎麼讀這份文件</span></a>
+    <a href="#c2"><span class="n">2</span><span class="t">通用契約</span></a>
+    <a href="#c3"><span class="n">3</span><span class="t">呼叫順序</span></a>
+    <a href="#c4"><span class="n">4</span><span class="t">Endpoint 規格</span></a>
+  </nav>
+
+  <h2 class="chapter" id="c1">1. 怎麼讀這份文件</h2>
+  <p class="chapter-note">四章各自負責一件事，建議依序讀完前兩章再開始串接。</p>
+  <table>
+    <tr><th style="width:16%">章節</th><th style="width:30%">回答什麼</th><th>什麼時候讀</th></tr>
+    <tr><td><b>2. 通用契約</b></td><td>每一支 API 都適用的規則</td><td><b>動工前先讀完</b>。回應包裝、錯誤碼、非同步輪詢寫一次，後面 27 支不再重複</td></tr>
+    <tr><td><b>3. 呼叫順序</b></td><td>使用者走一遍流程時，API 的先後關係</td><td>規劃頁面與狀態機時</td></tr>
+    <tr><td><b>4. Endpoint 規格</b></td><td>單一支 API 的欄位定義</td><td>實作某一支時查閱</td></tr>
+  </table>
+  <h3>三件最容易踩到的事</h3>
+  <ol>
+    <li><b>凡是呼叫 AI 的 API 都是非同步。</b>POST 回 <code>202</code> 與 <code>jobId</code>，
+        要輪詢 <code>GET /api/jobs/{jobId}</code> 才拿得到結果 —— 共 6 支，見 §2.5。</li>
+    <li><b>後端不回中文句子。</b>錯誤只給 <code>code</code> 與 <code>messageKey</code>，
+        中文文案由前端的文案表提供 —— 見 §2.1。</li>
+    <li><b>HTTP status 照實回，不會永遠 200。</b>請用 status 判斷成敗，不要去解析 body 裡的旗標。</li>
+  </ol>
+  <h3>環境</h3>
+  <table>
+    <tr><th style="width:26%">項目</th><th>值</th></tr>
+    <tr><td>本機 Base URL</td><td><code>http://localhost:8081/api</code></td></tr>
+    <tr><td>Swagger UI</td><td><code>http://localhost:8081/swagger-ui/index.html</code></td></tr>
+    <tr><td>OpenAPI JSON</td><td><code>http://localhost:8081/v3/api-docs</code></td></tr>
+    <tr><td>機器可讀規格</td><td><code>docs/openapi.yaml</code> — 可直接產生 TypeScript client</td></tr>
+  </table>
+
+  <h2 class="chapter" id="c2">2. 通用契約</h2>
+  <p class="chapter-note">以下規則適用於全部 27 支 endpoint，第 4 章不再重複說明。</p>
+<h3 id="21-回應包裝">2.1 回應包裝</h3>
+<h4 id="成功單筆-commonrespt">成功（單筆）—
+<code>CommonResp&lt;T&gt;</code></h4>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;timestamp&quot;</span><span class="fu">:</span> <span class="dv">1788289513681</span><span class="fu">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;data&quot;</span><span class="fu">:</span> <span class="fu">{</span> <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;ms_01M1F5...&quot;</span><span class="fu">,</span> <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;PM (Northstar Labs)&quot;</span> <span class="fu">}</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h4 id="成功列表-commonpagerespt">成功（列表）—
+<code>CommonPageResp&lt;T&gt;</code></h4>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;timestamp&quot;</span><span class="fu">:</span> <span class="dv">1788289513681</span><span class="fu">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;size&quot;</span><span class="fu">:</span> <span class="kw">null</span><span class="fu">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;page&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;totalPages&quot;</span><span class="fu">:</span> <span class="dv">1</span><span class="fu">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;total&quot;</span><span class="fu">:</span> <span class="dv">5</span><span class="fu">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;data&quot;</span><span class="fu">:</span> <span class="ot">[</span> <span class="fu">{</span> <span class="dt">&quot;...&quot;</span><span class="fu">:</span> <span class="st">&quot;...&quot;</span> <span class="fu">}</span> <span class="ot">]</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h4 id="失敗--errorresp">失敗 — <code>ErrorResp</code></h4>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;timestamp&quot;</span><span class="fu">:</span> <span class="dv">1788289513927</span><span class="fu">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;code&quot;</span><span class="fu">:</span> <span class="st">&quot;JOB_PAGE_UNREADABLE&quot;</span><span class="fu">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;messageKey&quot;</span><span class="fu">:</span> <span class="st">&quot;job_input_try_paste_text&quot;</span><span class="fu">,</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;retryable&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;requestId&quot;</span><span class="fu">:</span> <span class="st">&quot;req_01M1F5RYE0WFD915BGK9HHKPGW&quot;</span><span class="fu">,</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;extra&quot;</span><span class="fu">:</span> <span class="kw">null</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>code</code></td>
+<td>穩定機器碼（= <code>RespErrCode</code> 的 enum
+名稱）。前端用它決定行為</td>
+</tr>
+<tr>
+<td><code>messageKey</code></td>
+<td>文案索引鍵。<strong>後端不回中文句子</strong> —— 產品 Spec §12
+明訂中文文案由產品與設計共同管理</td>
+</tr>
+<tr>
+<td><code>retryable</code></td>
+<td><code>true</code> 時前端應提供「請稍候再試」與重試入口</td>
+</tr>
+<tr>
+<td><code>extra</code></td>
+<td>選填補充資訊（例如超過的位元組數）</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>HTTP status 照實回，不會永遠回 200。</strong> 把成敗塞進
+body 並永遠回 200 會讓 ALB／CloudWatch 的 5xx 告警失效、瀏覽器 devtools
+看不出哪支失敗、CDN 把錯誤回應當成功快取。</p>
+</blockquote>
+<p><strong>命名慣例：camelCase</strong>（對齊 <code>CommonResp</code> /
+<code>CommonPageResp</code> 的 Lombok <code>@Data</code> + Jackson
+預設）。</p>
+<h3 id="22-認證">2.2 認證</h3>
+<pre><code>Authorization: Bearer &lt;access_token&gt;</code></pre>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>狀態</th>
+<th>行為</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1A / P1B / P2A / P2B</td>
+<td><strong>optional</strong></td>
+<td>後端忽略。以無帳號流程驗證</td>
+</tr>
+<tr>
+<td><strong>P2C 起</strong></td>
+<td><strong>required</strong></td>
+<td>缺少或無效回 <code>401 ACCESS_DENIED</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>前端請從第一天就把這個 header 帶上</strong>（有 token
+就帶，沒有就省略），P2C 上線時不必改呼叫程式碼。 所有資料表的
+<code>user_id</code> 已建好且為 nullable，P2C 開始寫入即可，不需要
+migration。</p>
+<h3 id="23-共用-request-header">2.3 共用 Request Header</h3>
+<table>
+<thead>
+<tr>
+<th>Header</th>
+<th>必要性</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Content-Type</code></td>
+<td>視 endpoint</td>
+<td><code>application/json</code> 或
+<code>multipart/form-data</code></td>
+</tr>
+<tr>
+<td><code>Authorization</code></td>
+<td>見 §2.2</td>
+<td><code>Bearer &lt;token&gt;</code></td>
+</tr>
+<tr>
+<td><code>Idempotency-Key</code></td>
+<td><strong>建議</strong></td>
+<td>UUID v4。所有 <code>POST</code> 都支援</td>
+</tr>
+<tr>
+<td><code>X-Request-Id</code></td>
+<td>選填</td>
+<td>前端自帶的追蹤 id；未帶則後端產生。一律回寫在 response header 與
+<code>ErrorResp.requestId</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="24-冪等">2.4 冪等</h3>
+<p>產品 Spec §13.3 有三條硬性要求：</p>
+<blockquote>
+<ul>
+<li>具 idempotency key 的請求不可重複建立同一個 Attempt</li>
+<li>使用者重新整理頁面不應重複生成題目或重複扣模型成本</li>
+<li>失敗狀態可重新嘗試，但不覆蓋已成功的結果</li>
+</ul>
+</blockquote>
+<p>實作：<code>idempotency_keys</code> 表 +
+<code>UNIQUE (idempotency_key, endpoint)</code>。
+<code>state = IN_PROGRESS</code> 讓連點兩下的第二個請求回同一個
+<code>jobId</code>，而不是在第一個還沒寫完時又發起模型呼叫。
+<code>request_hash</code> 防止前端 bug 造成的「同一個 key
+送不同內容」被誤判為重送。保留 24 小時。</p>
+<h3 id="25-非同步-job">2.5 非同步 Job</h3>
+<p>生題約 15–40 秒、分析約 20–45 秒，都超過一般 HTTP
+timeout，因此<strong>所有呼叫 AI
+模型的操作共用同一套非同步流程</strong>，前端只要寫一次輪詢邏輯。</p>
+<pre><code>POST &lt;AI endpoint&gt;  →  202 { &quot;timestamp&quot;:…, &quot;data&quot;: { &quot;jobId&quot;:&quot;job_…&quot;, &quot;status&quot;:&quot;QUEUED&quot;, &quot;pollAfterMs&quot;:1500 } }
+                          ↓ 依 pollAfterMs 輪詢
+GET /api/jobs/{jobId}</code></pre>
+<p><strong>Job 物件</strong></p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;timestamp&quot;</span><span class="fu">:</span> <span class="dv">1788289513681</span><span class="fu">,</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;data&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;jobId&quot;</span><span class="fu">:</span> <span class="st">&quot;job_01M1F5...&quot;</span><span class="fu">,</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;jobType&quot;</span><span class="fu">:</span> <span class="st">&quot;QUESTION_SET_GENERATION&quot;</span><span class="fu">,</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;status&quot;</span><span class="fu">:</span> <span class="st">&quot;RUNNING&quot;</span><span class="fu">,</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;progress&quot;</span><span class="fu">:</span> <span class="fl">0.4</span><span class="fu">,</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;elapsedMs&quot;</span><span class="fu">:</span> <span class="dv">12034</span><span class="fu">,</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;pollAfterMs&quot;</span><span class="fu">:</span> <span class="dv">2000</span><span class="fu">,</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;result&quot;</span><span class="fu">:</span> <span class="kw">null</span><span class="fu">,</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;error&quot;</span><span class="fu">:</span> <span class="kw">null</span><span class="fu">,</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;createdAt&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-09-10T02:11:07Z&quot;</span><span class="fu">,</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;finishedAt&quot;</span><span class="fu">:</span> <span class="kw">null</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th><code>status</code></th>
+<th><code>result</code></th>
+<th><code>error</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>QUEUED</code> / <code>RUNNING</code></td>
+<td><code>null</code></td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>READY</code></td>
+<td>有值（形狀依 <code>jobType</code>）</td>
+<td><code>null</code></td>
+</tr>
+<tr>
+<td><code>FAILED</code></td>
+<td><code>null</code></td>
+<td>有值（同 <code>ErrorResp</code> 的 code / messageKey /
+retryable）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>輪詢規則（前端請照做）</strong></p>
+<ol type="1">
+<li>依 response 的 <code>pollAfterMs</code>
+決定下次輪詢，<strong>不要固定 1 秒打</strong></li>
+<li>後端退避策略：<code>1500ms → 2000ms → 3000ms → 5000ms</code>（上限 5
+秒）</li>
+<li><code>READY</code> 或 <code>FAILED</code> 即停止</li>
+<li><strong>總輪詢上限 180 秒</strong>，超過視同逾時</li>
+<li>Job 結果保留 <strong>24 小時</strong>，重整頁面後仍可用同一個
+<code>jobId</code> 取回</li>
+</ol>
+<blockquote>
+<p><strong>失敗不消耗額度</strong>：新增題目的每日配額只在 job
+<strong>成功寫入題目時</strong>才 +1（產品 Spec 4.3.4.5）。</p>
+</blockquote>
+<h3 id="26-enum">2.6 Enum</h3>
+<table>
+<thead>
+<tr>
+<th>Enum</th>
+<th>值</th>
+<th>前端顯示</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>category</code></td>
+<td><code>INTRODUCTION</code> / <code>BEHAVIORAL</code> /
+<code>TECHNICAL</code> / <code>CULTURAL_FIT</code></td>
+<td>自我介紹 / 行為問題 / 技術問題 / 文化契合</td>
+</tr>
+<tr>
+<td><code>difficulty</code></td>
+<td><code>EASY</code> / <code>MEDIUM</code> / <code>HARD</code></td>
+<td>簡單 / 中等 / 困難</td>
+</tr>
+<tr>
+<td><code>inputMode</code></td>
+<td><code>TEXT</code>（P1B）/ <code>VOICE</code>（P2B）</td>
+<td>文字 / 語音</td>
+</tr>
+<tr>
+<td><code>fitState</code></td>
+<td><code>GREEN</code> / <code>YELLOW</code> / <code>RED</code></td>
+<td>綠 / 黃 / 紅</td>
+</tr>
+<tr>
+<td><code>overallState</code></td>
+<td><code>STRONG</code> / <code>ACCEPTABLE</code> /
+<code>NEEDS_IMPROVEMENT</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>status</code>（job）</td>
+<td><code>QUEUED</code> / <code>RUNNING</code> / <code>READY</code> /
+<code>FAILED</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>inputType</code>（JD）</td>
+<td><code>TEXT</code> / <code>URL</code></td>
+<td>貼上文字 / 職缺連結</td>
+</tr>
+<tr>
+<td><code>analysisType</code></td>
+<td><code>FIRST</code> / <code>COMPARISON</code></td>
+<td>首次分析 / 第二次比較</td>
+</tr>
+<tr>
+<td><code>origin</code>（題目）</td>
+<td><code>INITIAL</code> / <code>ADDED</code></td>
+<td>首次生成 / 使用者新增</td>
+</tr>
+<tr>
+<td><code>source</code>（參考答案）</td>
+<td><code>USER_REQUESTED</code> / <code>FROM_ANALYSIS</code></td>
+<td>點擊生成 / 分析產出</td>
+</tr>
+</tbody>
+</table>
+<p><strong>燈號門檻</strong>（產品 Spec D-025、AC-13）：綠燈 90
+分以上／黃燈 60–89 分／紅燈未滿 60 分。</p>
+<blockquote>
+<p>⚠️ <strong>API 不回傳 numeric score。</strong> 產品 Spec D-025
+明訂「Server 保存 numeric score，UI 不顯示數字」。 分數存在
+<code>analyses</code> 表供模型評估使用，DTO 層只映射
+<code>*State</code>。</p>
+</blockquote>
+<h3 id="27-jd-來源支援範圍">2.7 JD 來源支援範圍</h3>
+<table>
+<thead>
+<tr>
+<th>來源</th>
+<th>本輪狀態</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>貼上 JD 文字</td>
+<td>✅ P1A 支援</td>
+</tr>
+<tr>
+<td>CakeResume 職缺連結</td>
+<td>✅ P1A 支援</td>
+</tr>
+<tr>
+<td>104 / LinkedIn 職缺連結</td>
+<td>❌ 本輪不做 → 回 <code>JOB_URL_NOT_SUPPORTED</code></td>
+</tr>
+</tbody>
+</table>
+<p>⚠️ 前端 supporting text 目前寫「可貼上 104、Cake 或 LinkedIn
+連結」，<strong>需同步改為只提 Cake</strong>。</p>
+<h3 id="28-error-code-全表">2.8 Error Code 全表</h3>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>HTTP</th>
+<th><code>messageKey</code></th>
+<th><code>retryable</code></th>
+<th>前端恢復方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JOB_PAGE_UNREADABLE</code></td>
+<td>422</td>
+<td><code>job_input_try_paste_text</code></td>
+<td>✅</td>
+<td>回到職缺資訊欄位：「讀取連結失敗，請重新上傳」</td>
+</tr>
+<tr>
+<td><code>JOB_URL_NOT_SUPPORTED</code></td>
+<td>422</td>
+<td><code>job_url_not_supported</code></td>
+<td>✅</td>
+<td>提示改貼 JD 文字</td>
+</tr>
+<tr>
+<td><code>JOB_TEXT_TOO_SHORT</code></td>
+<td>422</td>
+<td><code>job_input_too_short</code></td>
+<td>✅</td>
+<td>提示補充職缺內容</td>
+</tr>
+<tr>
+<td><code>RESUME_UNSUPPORTED_TYPE</code></td>
+<td>415</td>
+<td><code>resume_unsupported_type</code></td>
+<td>✅</td>
+<td>「請使用 PDF」</td>
+</tr>
+<tr>
+<td><code>RESUME_EXTRACTION_FAILED</code></td>
+<td>422</td>
+<td><code>resume_extraction_failed</code></td>
+<td>✅</td>
+<td>「請重新上傳可讀取的 PDF」</td>
+</tr>
+<tr>
+<td><code>RESUME_EMPTY</code></td>
+<td>422</td>
+<td><code>resume_empty</code></td>
+<td>✅</td>
+<td>同上</td>
+</tr>
+<tr>
+<td><code>MOCKSET_SOURCE_MISSING</code></td>
+<td>400</td>
+<td><code>mockset_source_missing</code></td>
+<td>✅</td>
+<td>阻止建立，回到缺少的欄位</td>
+</tr>
+<tr>
+<td><code>MOCKSET_IMMUTABLE</code></td>
+<td>409</td>
+<td><code>mockset_immutable</code></td>
+<td>❌</td>
+<td>提示需建立新的 Mock Set</td>
+</tr>
+<tr>
+<td><code>MOCKSET_LIMIT_REACHED</code></td>
+<td>409</td>
+<td><code>mockset_limit_reached</code></td>
+<td>❌</td>
+<td>P3 才啟用</td>
+</tr>
+<tr>
+<td><code>QUESTION_GENERATION_INVALID</code></td>
+<td>502</td>
+<td><code>question_generation_retry</code></td>
+<td>✅</td>
+<td>「題目生成失敗，請稍候再試」</td>
+</tr>
+<tr>
+<td><code>QUESTION_GENERATION_BLOCKED</code></td>
+<td>422</td>
+<td><code>question_generation_blocked</code></td>
+<td>✅</td>
+<td>JD／履歷資訊不足</td>
+</tr>
+<tr>
+<td><code>ADD_QUESTION_LIMIT_REACHED</code></td>
+<td>429</td>
+<td><code>add_question_limit_reached</code></td>
+<td>❌</td>
+<td>按鈕 Disabled：「已達本日上限」</td>
+</tr>
+<tr>
+<td><code>QUESTION_LIMIT_REACHED</code></td>
+<td>409</td>
+<td><code>question_limit_reached</code></td>
+<td>❌</td>
+<td>該題型已達 20 題（<strong>文案待補</strong>）</td>
+</tr>
+<tr>
+<td><code>EMPTY_ANSWER</code></td>
+<td>400</td>
+<td><code>answer_empty</code></td>
+<td>✅</td>
+<td>不進行分析，提示重新回答</td>
+</tr>
+<tr>
+<td><code>ANSWER_TOO_SHORT</code></td>
+<td>400</td>
+<td><code>answer_too_short</code></td>
+<td>✅</td>
+<td>「請至少輸入 100 個字元」</td>
+</tr>
+<tr>
+<td><code>ANSWER_TEXT_TOO_LONG</code></td>
+<td>400</td>
+<td><code>answer_text_too_long</code></td>
+<td>✅</td>
+<td>達 2000 字元後不可繼續輸入</td>
+</tr>
+<tr>
+<td><code>ANSWER_TEXT_INVALID_CHARS</code></td>
+<td>400</td>
+<td><code>answer_text_invalid_chars</code></td>
+<td>✅</td>
+<td>僅允許英文字母、數字、空格、半形標點與換行</td>
+</tr>
+<tr>
+<td><code>ANSWER_TOO_LONG</code></td>
+<td>400</td>
+<td><code>answer_too_long</code></td>
+<td>❌</td>
+<td>音檔超過 90 秒</td>
+</tr>
+<tr>
+<td><code>AUDIO_UNSUPPORTED_TYPE</code></td>
+<td>415</td>
+<td><code>audio_unsupported_type</code></td>
+<td>✅</td>
+<td>重新錄音</td>
+</tr>
+<tr>
+<td><code>UPLOAD_TOO_LARGE</code></td>
+<td>413</td>
+<td><code>upload_too_large</code></td>
+<td>✅</td>
+<td>履歷 10 MB／音檔 25 MB</td>
+</tr>
+<tr>
+<td><code>STT_FAILED</code></td>
+<td>502</td>
+<td><code>stt_failed</code></td>
+<td>✅</td>
+<td>重新錄音或切換文字模式</td>
+</tr>
+<tr>
+<td><code>ANALYSIS_UNAVAILABLE</code></td>
+<td>502</td>
+<td><code>analysis_retry</code></td>
+<td>✅</td>
+<td>留在 4.4 練習頁，「請稍候再試」</td>
+</tr>
+<tr>
+<td><code>REFERENCE_ANSWER_NOT_ALLOWED</code></td>
+<td>409</td>
+<td><code>reference_answer_not_allowed</code></td>
+<td>❌</td>
+<td>隱藏生成按鈕</td>
+</tr>
+<tr>
+<td><code>MODEL_UNAVAILABLE</code></td>
+<td>502</td>
+<td><code>model_unavailable</code></td>
+<td>✅</td>
+<td>「請稍候再試」</td>
+</tr>
+<tr>
+<td><code>MODEL_QUOTA_EXCEEDED</code></td>
+<td>429</td>
+<td><code>model_quota_exceeded</code></td>
+<td>❌</td>
+<td>提示稍後再來</td>
+</tr>
+<tr>
+<td><code>MODEL_OUTPUT_INVALID</code></td>
+<td>502</td>
+<td><code>model_output_invalid</code></td>
+<td>✅</td>
+<td>「請稍候再試」</td>
+</tr>
+<tr>
+<td><code>PROVIDER_NOT_CONFIGURED</code></td>
+<td>503</td>
+<td><code>provider_not_configured</code></td>
+<td>❌</td>
+<td>環境問題，非使用者可恢復</td>
+</tr>
+<tr>
+<td><code>AUTH_TOKEN_EXPIRED</code></td>
+<td>410</td>
+<td><code>auth_token_expired</code></td>
+<td>✅</td>
+<td>重新寄送驗證信</td>
+</tr>
+<tr>
+<td><code>ACCESS_DENIED</code></td>
+<td>401</td>
+<td><code>access_denied</code></td>
+<td>❌</td>
+<td>導向登入</td>
+</tr>
+<tr>
+<td><code>RATE_LIMITED</code></td>
+<td>429</td>
+<td><code>rate_limited</code></td>
+<td>✅</td>
+<td>稍後重試</td>
+</tr>
+<tr>
+<td><code>IDEMPOTENCY_CONFLICT</code></td>
+<td>409</td>
+<td><code>idempotency_conflict</code></td>
+<td>✅</td>
+<td>同一請求處理中，稍候</td>
+</tr>
+<tr>
+<td><code>VALIDATION_ERROR</code></td>
+<td>400</td>
+<td><code>validation_error</code></td>
+<td>✅</td>
+<td>回到對應欄位</td>
+</tr>
+<tr>
+<td><code>NOT_FOUND</code></td>
+<td>404</td>
+<td><code>not_found</code></td>
+<td>❌</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>INTERNAL_ERROR</code></td>
+<td>500</td>
+<td><code>internal_error</code></td>
+<td>✅</td>
+<td>「請稍候再試」</td>
+</tr>
+</tbody>
+</table>
+<hr />
+
+  <h2 class="chapter" id="c3">3. 呼叫順序</h2>
+  <p class="chapter-note">
+    依 Figma user flow 逐步驟畫成時序圖，固定只用 FrontEnd / BackEnd / DB 三條 lane。
+    LLM、STT、S3、Email 等外部服務不另拉 lane，收斂成 BackEnd 的自我呼叫與註記。
+    第一張是所有 AI 呼叫共用的機制，後面五張凡標「非同步」的步驟都套用它。
+  </p>
+    <section class="flow" id="s0">
+      <div class="flow-head">
+        <span class="flow-num">共用機制</span>
+        <h3>非同步 Job 通用機制（所有 AI 呼叫共用）</h3>
+        <p class="blurb"><b>只要那支 API 會呼叫模型，就是這個形狀。</b>前端只需要寫一次輪詢邏輯，
+        後面五張圖裡凡是標「非同步」的步驟都套用這裡，不再重複展開。
+        目前共 <b>6 支</b>：JD 解析、生成題目、新增題目、語音轉寫、參考答案、分析。</p>
+      </div>
+      <div class="diagram-frame"><pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant FE as FrontEnd
+    participant BE as BackEnd
+    participant DB as DB
+
+    FE->>BE: POST {任一 AI endpoint}<br/>Idempotency-Key: uuid v4
+    BE->>DB: SELECT idempotency_keys
+
+    alt 相同 key 已完成
+        BE-->>FE: 回上次的同一個 jobId（不重複呼叫模型）
+    else 新請求
+        BE->>DB: INSERT idempotency_keys (IN_PROGRESS)<br/>INSERT ai_jobs (QUEUED)
+        BE-->>FE: 202 { jobId, status: QUEUED, pollAfterMs: 1500 }
+    end
+
+    Note over BE: 背景執行緒接手，HTTP 已經回完
+    BE->>BE: 呼叫 LLM / STT
+    BE->>DB: 寫入結果，UPDATE ai_jobs SET status=READY
+
+    loop 依 pollAfterMs 輪詢：1500→2000→3000→5000ms，上限 180 秒
+        FE->>BE: GET /api/jobs/{jobId}
+        BE->>DB: SELECT ai_jobs
+        alt status = QUEUED / RUNNING
+            BE-->>FE: { status, progress, pollAfterMs }
+            Note over FE: 依新的 pollAfterMs 再輪詢<br/>不要固定 1 秒打
+        else status = READY
+            BE-->>FE: { status: READY, result }
+            Note over FE: 停止輪詢，取 result
+        else status = FAILED
+            BE-->>FE: { status: FAILED, error: { code, messageKey, retryable } }
+            Note over FE: 停止輪詢，依 code 顯示文案<br/>retryable=true 才給重試按鈕
+        end
+    end
+
+    Note over FE,DB: job 結果保留 24 小時，重整頁面可用同一個 jobId 取回<br/>失敗不消耗每日新增題目額度
+</pre></div>
+    </section>
+    <section class="flow" id="s1">
+      <div class="flow-head">
+        <span class="flow-num">Step 0</span>
+        <h3>首頁 → 登入彈窗（Email 驗證信 / Google SSO）</h3>
+        <p class="blurb">點擊「開始練習」若尚未登入，先跳登入彈窗（Spec 4.6）。Email 與 Google 兩條路徑最終都
+        匯到同一個「驗證成功」判斷；失敗會顯示提醒文字並回到登入彈窗重試。
+        這段全部是同步 API，不經過 job 機制。</p>
+      </div>
+      <div class="diagram-frame"><pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant FE as FrontEnd
+    participant BE as BackEnd
+    participant DB as DB
+
+    Note over FE: Step 0 首頁
+    FE->>FE: 點擊「開始練習」（& 登入，若尚未登入）
+    FE->>FE: 檢查是否已成功登入
+
+    alt 已成功登入
+        Note over FE: 直接進入「是否已建立過 Mock Set」判斷
+    else 尚未登入
+        Note over FE: 顯示登入彈窗（Spec 4.6）
+
+        alt 使用 Google 帳戶登入（Phase 3）
+            FE->>FE: 導向 Google 第三方登入（OAuth）
+            FE->>BE: POST /api/auth/google { idToken }
+            BE->>BE: 驗證 Google id token
+            alt 驗證成功
+                BE->>DB: SELECT or INSERT users
+                BE-->>FE: 200 { accessToken, user }
+            else 驗證失敗
+                BE-->>FE: 401 ACCESS_DENIED
+                Note over FE: 顯示「提醒文字：請稍後再試」<br/>回到登入彈窗
+            end
+        else 使用 Email 驗證信
+            FE->>BE: POST /api/auth/email/request { email }
+            BE->>BE: 產生 token，計算 SHA-256
+            BE->>DB: INSERT auth_email_tokens (token_hash, expires_at)
+            BE-->>FE: 200 { status: sent, expiresIn: 900 }
+            Note over FE: 顯示「請查收驗證信」
+            Note over FE: 使用者於 Email 點擊連結驗證
+            FE->>BE: POST /api/auth/email/verify { token }
+            alt token 有效且未使用
+                BE->>DB: UPDATE auth_email_tokens SET consumed_at
+                BE->>DB: SELECT or INSERT users
+                BE-->>FE: 200 { accessToken, user }
+            else token 逾期／無效
+                BE-->>FE: 410 AUTH_TOKEN_EXPIRED
+                Note over FE: 顯示「提醒文字：請稍後再試」<br/>回到登入彈窗
+            end
+        end
+
+        Note over FE: 驗證成功 → 關閉彈窗
+    end
+
+    FE->>BE: GET /api/me
+    BE->>DB: SELECT users / mocksets
+    BE-->>FE: { user, hasMockset, defaultMocksetId }
+    alt 尚未建立過 Mock Set
+        Note over FE: 導向 Step 1 建立面試資料
+    else 已建立過
+        Note over FE: 導向 Step 2 選擇題型
+    end
+</pre></div>
+    </section>
+    <section class="flow" id="s2">
+      <div class="flow-head">
+        <span class="flow-num">Step 1–3</span>
+        <h3>建立面試資料 → 選擇題型 → 選擇題目（含每日新增額度）</h3>
+        <p class="blurb">該題型題目已生成 → 不重新生成、沿用先前題目與進度；尚未生成 → 依 Step 1 的資料首次生成
+        5 題。新增題目按鈕是否 Enabled，取決於本日已新增次數是否超過 3 次。
+        <b>JD 解析、生成題目、新增題目三支都是非同步</b>，走上方共用機制。</p>
+      </div>
+      <div class="diagram-frame"><pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant FE as FrontEnd
+    participant BE as BackEnd
+    participant DB as DB
+
+    Note over FE: Step 1 建立面試資料（Mock Set）
+    FE->>FE: 使用者上傳資料<br/>必填：JD（Text/URL）、CV/Resume（PDF）<br/>選填：Portfolio（PDF）、Additional Text ← Phase 3
+
+    rect rgba(31,110,140,0.08)
+    Note over FE,DB: ① JD 解析（非同步）
+    FE->>BE: POST /api/job-postings/parse { inputType, value }
+    BE-->>FE: 202 { jobId }
+    Note over FE,BE: 輪詢 GET /api/jobs/{jobId}
+    BE->>BE: 呼叫 LLM 解析 JD（P00）
+    BE->>DB: INSERT job_postings
+    BE-->>FE: READY { jobPostingId, extraction, extractedFieldCount, missingFields }
+    Note over FE: 擷取不到的欄位回 null，顯示「--」<br/>欄位缺漏不阻擋流程
+    end
+
+    Note over FE,DB: ② 履歷（同步，不呼叫模型）
+    FE->>BE: POST /api/resumes（multipart PDF）
+    BE->>BE: 抽取 PDF 文字
+    BE->>DB: INSERT resumes
+    BE-->>FE: 201 { resumeId }
+
+    Note over FE,DB: ③ 建立 Mock Set（同步）
+    FE->>BE: POST /api/mocksets { name, jobPostingId, resumeId }
+    BE->>DB: INSERT mocksets, mockset_sources（凍結快照 CCP）
+    BE-->>FE: 201 { mocksetId }
+    Note over BE: 快照後 JD 原網頁再改動<br/>不影響已建立的 Mock Set
+
+    Note over FE: Step 2 選擇題型<br/>自我介紹／行為問題／技術問題／文化契合
+    FE->>BE: GET /api/mocksets/{id}/question-sets?category=
+    BE->>DB: SELECT question_sets
+
+    alt 該題型題目已生成（M-07 沿用）
+        DB-->>BE: 已存在
+        BE-->>FE: 200 { exists: true, questionSet, questions[5] }
+        Note over FE: 不重新生成，顯示先前題目 & 進度
+    else 尚未生成（M-06 首次生成，非同步）
+        DB-->>BE: 無資料
+        BE-->>FE: 200 { exists: false }
+        rect rgba(31,110,140,0.08)
+        FE->>BE: POST /api/mocksets/{id}/question-sets { category }
+        BE-->>FE: 202 { jobId }
+        Note over FE,BE: 輪詢 GET /api/jobs/{jobId}（15–40 秒）
+        BE->>BE: 呼叫 LLM 生成 5 題（P01，基於凍結快照）
+        BE->>DB: INSERT question_sets, questions × 5
+        BE-->>FE: READY { questionSet, questions[5] }
+        end
+    end
+
+    Note over FE: Step 3 選擇題目
+    alt 本日新增題目 ≥ 3
+        Note over FE: 「新增題目」按鈕 Disabled
+    else 本日新增題目 未達 3
+        Note over FE: 「新增題目」按鈕 Enabled
+        FE->>FE: 使用者點擊「新增題目」
+        rect rgba(31,110,140,0.08)
+        FE->>BE: POST /api/question-sets/{id}/questions
+        BE->>DB: SELECT question_addition_quotas（today, Asia/Taipei）
+        BE-->>FE: 202 { jobId }
+        Note over FE,BE: 輪詢 GET /api/jobs/{jobId}
+        BE->>BE: 呼叫 LLM 生成 1 題（P02，與既有題目去重）
+        BE->>DB: INSERT questions (origin=ADDED)<br/>INSERT ... ON DUPLICATE KEY UPDATE used_count+1
+        BE-->>FE: READY { question, quota }
+        Note over BE: 額度只在成功寫入題目時 +1<br/>失敗不扣
+        end
+        Note over FE: 新題目 +1，回到 Step 3 題目列表
+    end
+
+    FE->>FE: 使用者選擇一題
+    Note over FE: 進入 Step 4 練習回答
+</pre></div>
+    </section>
+    <section class="flow" id="s3">
+      <div class="flow-head">
+        <span class="flow-num">Step 4</span>
+        <h3>練習回答 — 文字輸入模式</h3>
+        <p class="blurb">90 秒倒數歸零不會自動送出——鎖定輸入欄、顯示「重新計時」。是否顯示「參考前次答案」
+        或「生成參考答案」，取決於這題是否已經練過（Step 5 判斷）。
+        <b>建立 attempt 是同步，參考答案與分析是非同步。</b></p>
+      </div>
+      <div class="diagram-frame"><pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant FE as FrontEnd
+    participant BE as BackEnd
+    participant DB as DB
+
+    Note over FE: Step 4 練習回答，輸入模式：文字
+
+    alt 已練過此題
+        FE->>BE: GET /api/questions/{id}/reference-answer
+        BE->>DB: SELECT reference_answers
+        BE-->>FE: 200 { referenceAnswer }
+        Note over FE: 顯示「參考前次答案」
+    else 尚未練過此題
+        FE->>FE: 使用者點擊「生成參考答案」
+        rect rgba(31,110,140,0.08)
+        FE->>BE: POST /api/questions/{id}/reference-answer
+        BE-->>FE: 202 { jobId }
+        Note over FE,BE: 輪詢 GET /api/jobs/{jobId}
+        BE->>BE: 呼叫 LLM 生成參考答案（P03）
+        BE->>DB: INSERT reference_answers
+        BE-->>FE: READY { referenceAnswer }
+        end
+        Note over FE: 顯示生成答案
+    end
+
+    FE->>FE: focus 文字輸入欄，開始 90 秒倒數
+    loop 輸入中，倒數未歸零
+        FE->>FE: 即時檢核字數／字元（100–2,000）
+    end
+    opt 90 秒倒數歸零
+        Note over FE: 鎖定輸入欄，顯示「重新計時」<br/>不自動送出、不自動跳轉
+        FE->>FE: 使用者點擊「重新計時」→ 清空輸入欄，恢復未計時狀態
+    end
+
+    FE->>FE: 使用者點擊「確認並開始分析」
+
+    Note over FE,DB: ① 建立 attempt（同步）
+    FE->>BE: POST /api/questions/{id}/attempts<br/>{ inputMode: TEXT, content }
+    BE->>BE: 後端再驗一次長度與字元（不可只信前端）
+    BE->>DB: INSERT attempts
+    BE-->>FE: 201 { attemptId }
+    Note over BE: 90 秒計時由前端 enforce<br/>後端無法可信驗證時間，只驗長度
+
+    rect rgba(31,110,140,0.08)
+    Note over FE,DB: ② 分析（非同步，20–45 秒）
+    FE->>BE: POST /api/attempts/{id}/analysis（無 body）
+    BE-->>FE: 202 { jobId }
+    Note over FE,BE: 輪詢 GET /api/jobs/{jobId}
+    BE->>DB: SELECT 該題是否已有完成分析
+    Note over BE: 有 → COMPARISON（A02）<br/>無 → FIRST（A01）<br/>前端不需指定
+    BE->>BE: 呼叫 LLM 進行 3-Fit 分析
+    BE->>DB: INSERT analyses
+    BE-->>FE: READY { analysis }
+    end
+    Note over FE: 進入 Step 5 分析結果
+</pre></div>
+    </section>
+    <section class="flow" id="s4">
+      <div class="flow-head">
+        <span class="flow-num">Step 4</span>
+        <h3>練習回答 — 語音輸入模式</h3>
+        <p class="blurb">錄音中可「取消」（丟棄音檔）；90 秒到期會強制結束並送出轉換，隱藏「重新錄製」。
+        逐字稿轉出後不可編輯，僅能「重新錄製」整段重來。
+        <b>上傳音檔後 STT 走非同步</b>，「轉換中」畫面就是輪詢期間。</p>
+      </div>
+      <div class="diagram-frame"><pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant FE as FrontEnd
+    participant BE as BackEnd
+    participant DB as DB
+
+    Note over FE: Step 4 練習回答，輸入模式：語音
+    FE->>FE: 使用者點擊「錄音」→ 開始 90 秒倒數與錄音
+
+    alt 使用者點擊「取消錄音」
+        Note over FE: 丟棄音檔，回到未錄音狀態
+    else 點擊「完成錄音」或 90 秒到期（強制結束）
+        Note over FE: 顯示「轉換中」
+
+        rect rgba(31,110,140,0.08)
+        Note over FE,DB: ① 上傳與轉寫（非同步）
+        FE->>BE: POST /api/questions/{id}/attempts<br/>multipart { inputMode: VOICE, audio }
+        BE->>BE: 驗證 MIME / 大小，ffprobe 驗證真實長度
+        BE->>DB: 上傳 S3，INSERT attempts (transcript_status=PENDING)
+        BE-->>FE: 202 { jobId, attemptId }
+        Note over FE,BE: 輪詢 GET /api/jobs/{jobId}<br/>「轉換中」畫面即此期間
+        BE->>BE: 呼叫 STT 轉寫並校正文本
+
+        alt 轉寫成功
+            BE->>DB: UPDATE attempts SET content,<br/>transcript_status=CONFIRMED
+            BE-->>FE: READY { attempt, transcript }
+            Note over FE: 顯示語音逐字稿（不可編輯）
+        else 轉寫失敗／無可辨識語音
+            BE-->>FE: FAILED { code: STT_FAILED, retryable: true }
+            Note over FE: 提供「重新錄音」或「切換文字模式」
+        end
+        end
+
+        opt 使用者點擊「重新錄製」
+            Note over FE: 捨棄本次逐字稿，回到錄音狀態
+        end
+    end
+
+    FE->>FE: 使用者點擊「確認並開始分析」
+
+    rect rgba(31,110,140,0.08)
+    Note over FE,DB: ② 分析（非同步，與文字模式完全相同）
+    FE->>BE: POST /api/attempts/{id}/analysis
+    BE-->>FE: 202 { jobId }
+    Note over FE,BE: 輪詢 GET /api/jobs/{jobId}
+    BE->>BE: 呼叫 LLM 進行 3-Fit 分析
+    BE->>DB: INSERT analyses
+    BE-->>FE: READY { analysis }
+    end
+    Note over BE: deliveryFit 只評文法與句構<br/>不評發音、腔調、語速 —— 模型只拿到逐字稿
+    Note over FE: 進入 Step 5 分析結果
+</pre></div>
+    </section>
+    <section class="flow" id="s5">
+      <div class="flow-head">
+        <span class="flow-num">Step 5</span>
+        <h3>分析結果與後續動作</h3>
+        <p class="blurb">已練過的題目會多跑一次「前後次回答比較」，產出「這次進步了哪裡」。三個後續動作
+        （再練一次／重選題型／上一步）都回到練習迴圈，不是終點頁。
+        <b>比較不是另一支 API</b> —— 後端在同一個分析 job 內判斷，前端不需指定。</p>
+      </div>
+      <div class="diagram-frame"><pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant FE as FrontEnd
+    participant BE as BackEnd
+    participant DB as DB
+
+    Note over FE,DB: 承接 Step 4 的分析 job（同一個 jobId，非另一支 API）
+
+    BE->>DB: SELECT 該題是否已有完成分析
+
+    alt 首次作答（A01）
+        BE->>BE: 呼叫 LLM 分析：3-Fit + 最優先改善
+        BE->>DB: INSERT analyses (analysis_type=FIRST)
+        BE-->>FE: READY { analysis }
+        Note over FE: 顯示紅/黃/綠、3-Fit、優先改善建議<br/>priorityImprovement 含 referenceAnswer
+    else 已練過此題（A02）
+        BE->>DB: SELECT 前次已完成的 attempt 與 analysis
+        BE->>BE: 呼叫 LLM 比較前後次回答
+        BE->>DB: INSERT analyses (analysis_type=COMPARISON)
+        BE-->>FE: READY { analysis, comparison }
+        Note over FE: 額外顯示前次回答紀錄、這次進步了哪裡<br/>A02 不回 referenceAnswer（讓使用者用自己的話練）
+    end
+
+    Note over FE: comparison.improved 可能是空陣列<br/>要顯示「這次沒有明顯改善」而不是壞掉
+
+    opt 分析失敗
+        BE-->>FE: FAILED { code: ANALYSIS_UNAVAILABLE, retryable: true }
+        Note over FE: 留在練習頁，保留原有回答與前次分析<br/>不顯示假資料、不覆蓋已成功的結果
+    end
+
+    alt 使用者點擊「再練一次」
+        Note over FE: 回到同一題，Step 4
+    else 使用者點擊「重選題型」
+        Note over FE: 同題型下一題，回到 Step 4
+    else 使用者點擊「上一步」
+        Note over FE: 回到 Step 2 選擇題型
+    end
+</pre></div>
+    </section>
+  <h2 class="chapter" id="c4">4. Endpoint 規格</h2>
+  <p class="chapter-note">
+    依功能編號分節。每支只列前端需要的部分；欄位型別與必填規則以
+    <code>docs/openapi.yaml</code> 為準（兩者由同一份來源產生）。
+  </p>
+  <p class="chapter-note">
+    27 支全列於此，依功能編號分節。每支固定四段：<b>Endpoint</b>（含 header 與參數）→
+    <b>Request</b> → <b>Response</b>（完整 JSON，含外層包裝）→ <b>失敗情況</b>。
+    欄位說明表由 <code>docs/openapi.yaml</code> 的 schema 直接產生，型別與必填與實作一致。
+  </p>
+<h3 class="sec">4.0 Meta</h3>
+<div class="ep" id="ep-1">
+<h4 class="ephead"><span class="mth mGET">GET</span><code class="path">/api/health</code><span class="pill sync">同步</span></h4>
+<p class="epsum">服務與 provider 就緒狀態</p>
+<div class="epnotes"><p>無需認證。前端啟動時讀一次，<strong><code>limits</code>
+是前端驗證規則的唯一來源</strong>，不要把數字寫死在程式碼裡。</p>
+</div>
+<p class="part">Request</p>
+<pre><code>GET /api/health
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略</code></pre>
+<p class="none">無參數、無 request body。</p>
+<p class="part">Response — HTTP 200</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "status": "ok",
+    "service": "remockable-api",
+    "version": "0.1.0",
+    "requestId": "…",
+    "uptimeSeconds": 0,
+    "providers": {
+      "llm": {
+        "configured": true
+      },
+      "stt": {
+        "configured": true
+      }
+    },
+    "limits": {
+      "maxResumeBytes": 10000000,
+      "maxAudioBytes": 25000000,
+      "maxAnswerSeconds": 90,
+      "minAnswerChars": 100,
+      "maxAnswerChars": 2000,
+      "dailyAddQuestionLimit": 3,
+      "maxQuestionsPerCategory": 20
+    }
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.status</code></td><td class='ty'>enum</td><td class='rq'></td><td>服務狀態，正常為 ok　值：<code>"ok"</code></td></tr><tr><td><code>data.service</code></td><td class='ty'>string</td><td class='rq'></td><td>服務名稱，固定 remockable-api</td></tr><tr><td><code>data.version</code></td><td class='ty'>string</td><td class='rq'></td><td>後端版本號</td></tr><tr><td><code>data.requestId</code></td><td class='ty'>string</td><td class='rq'></td><td>本次請求的追蹤 id</td></tr><tr><td><code>data.uptimeSeconds</code></td><td class='ty'>integer</td><td class='rq'></td><td>服務已啟動秒數</td></tr><tr><td><code>data.providers</code></td><td class='ty'>object</td><td class='rq'></td><td>各 AI provider 是否已設定金鑰。未設定時相關 endpoint 會回 PROVIDER_NOT_CONFIGURED</td></tr><tr><td><code>data.providers.llm</code></td><td class='ty'>object</td><td class='rq'></td><td></td></tr><tr><td><code>data.providers.llm.configured</code></td><td class='ty'>boolean</td><td class='rq'></td><td></td></tr><tr><td><code>data.providers.stt</code></td><td class='ty'>object</td><td class='rq'></td><td></td></tr><tr><td><code>data.providers.stt.configured</code></td><td class='ty'>boolean</td><td class='rq'></td><td></td></tr><tr><td><code>data.limits</code></td><td class='ty'>object</td><td class='rq'></td><td>前端驗證規則的唯一來源。不要把數字寫死在程式碼裡。</td></tr><tr><td><code>data.limits.maxResumeBytes</code></td><td class='ty'>integer</td><td class='rq'></td><td></td></tr><tr><td><code>data.limits.maxAudioBytes</code></td><td class='ty'>integer</td><td class='rq'></td><td></td></tr><tr><td><code>data.limits.maxAnswerSeconds</code></td><td class='ty'>integer</td><td class='rq'></td><td></td></tr><tr><td><code>data.limits.minAnswerChars</code></td><td class='ty'>integer</td><td class='rq'></td><td></td></tr><tr><td><code>data.limits.maxAnswerChars</code></td><td class='ty'>integer</td><td class='rq'></td><td></td></tr><tr><td><code>data.limits.dailyAddQuestionLimit</code></td><td class='ty'>integer</td><td class='rq'></td><td></td></tr><tr><td><code>data.limits.maxQuestionsPerCategory</code></td><td class='ty'>integer</td><td class='rq'></td><td></td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>回 200，<code>data.status</code> 為 <code>ok</code></li><li><code>data.limits</code> 六個數值與 application.yml 的設定一致</li><li>provider 未設定金鑰時 <code>data.providers.llm.configured</code> 為
+false，且不洩漏金鑰內容</li><li>不需要 Authorization 也能呼叫</li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<div class="ep" id="ep-2">
+<h4 class="ephead"><span class="mth mGET">GET</span><code class="path">/api/jobs/{jobId}</code><span class="pill sync">同步</span></h4>
+<p class="epsum">輪詢非同步工作</p>
+<div class="epnotes"><p>輪詢任何非同步工作。形狀見 §2.5。<code>404 NOT_FOUND</code> =
+不存在或已超過 24 小時保留期。</p>
+<hr />
+</div>
+<p class="part">Request</p>
+<pre><code>GET /api/jobs/{jobId}
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>jobId</code></td><td class='ty'>path</td><td class='rq'>必填</td><td class='ty'>string</td><td></td></tr></table></div></div>
+<p class="part">Response — HTTP 200</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "jobId": "…",
+    "jobType": "JOB_POSTING_PARSE",
+    "status": "QUEUED",
+    "progress": 0.4,
+    "elapsedMs": 12034,
+    "pollAfterMs": 2000,
+    "result": {
+      "jobPostingId": "jp_01J8X2K4M7",
+      "inputType": "TEXT",
+      "sourceUrl": null,
+      "extraction": {
+        "jobTitle": "Product Manager",
+        "companyName": "Northstar Labs",
+        "industry": "SaaS / B2B 軟體",
+        "experience": "3 年以上產品管理經驗",
+        "jobDescription": null,
+        "requirements": null
+      },
+      "extractedFieldCount": 5,
+      "missingFields": [
+        "requirements"
+      ]
+    },
+    "error": {
+      "code": "QUESTION_GENERATION_INVALID",
+      "messageKey": "question_generation_retry",
+      "retryable": true,
+      "extra": {}
+    },
+    "createdAt": "2026-09-10T02:11:07Z",
+    "finishedAt": null
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.jobId</code></td><td class='ty'>string</td><td class='rq'>必填</td><td>非同步工作 id</td></tr><tr><td><code>data.jobType</code></td><td class='ty'>enum</td><td class='rq'>必填</td><td>值：<code>"JOB_POSTING_PARSE"</code> / <code>"QUESTION_SET_GENERATION"</code> / <code>"QUESTION_ADDITION"</code> / <code>"ATTEMPT_TRANSCRIPTION"</code> / <code>"REFERENCE_ANSWER_GENERATION"</code> / <code>"ANSWER_ANALYSIS"</code></td></tr><tr><td><code>data.status</code></td><td class='ty'>enum</td><td class='rq'>必填</td><td>值：<code>"QUEUED"</code> / <code>"RUNNING"</code> / <code>"READY"</code> / <code>"FAILED"</code></td></tr><tr><td><code>data.progress</code></td><td class='ty'>number</td><td class='rq'></td><td>完成比例 0–1。僅供顯示進度條，不可用來判斷是否完成</td></tr><tr><td><code>data.elapsedMs</code></td><td class='ty'>integer</td><td class='rq'></td><td>從建立到現在經過的毫秒數</td></tr><tr><td><code>data.pollAfterMs</code></td><td class='ty'>integer</td><td class='rq'></td><td>下次輪詢建議間隔。退避策略 1500 → 2000 → 3000 → 5000ms。</td></tr><tr><td><code>data.result</code></td><td class='ty'>object?</td><td class='rq'></td><td>status = READY 時有值。形狀依 job_type 而定：
+JOB_POSTING_PARSE → JobPostingParseResult；
+QUESTION_SET_GENERATION → QuestionSetDetail；
+QUESTION_ADDITION → { question, quota }；
+ATTEMPT_TRANSCRIPTION → { attempt }；
+REFERENCE_ANSWER_GENERATION → { reference_answer }；
+ANSWER_ANALYSIS → { analysis }
+</td></tr><tr><td><code>data.error</code></td><td class='ty'>object?</td><td class='rq'></td><td></td></tr><tr><td><code>data.createdAt</code></td><td class='ty'>string<span class="fmt">/date-time</span></td><td class='rq'></td><td>工作建立時間（ISO 8601）</td></tr><tr><td><code>data.finishedAt</code></td><td class='ty'>string<span class="fmt">/date-time</span>?</td><td class='rq'></td><td>工作結束時間；未結束為 null</td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>QUEUED / RUNNING 時 <code>result</code> 與 <code>error</code> 皆為
+null</li><li>READY 時 <code>result</code> 有值、<code>error</code> 為 null；FAILED
+時相反</li><li><code>pollAfterMs</code> 依 1500 → 2000 → 3000 → 5000 遞增，不超過
+5000</li><li>jobId 不存在回 404 <code>NOT_FOUND</code></li><li>job 建立超過 24 小時後回 404</li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>NOT_FOUND</code></td><td class='st st4'>404</td><td><code>not_found</code></td><td class='rq'>否</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<h3 class="sec">4.1 M-01 / M-02 職缺資訊解析（P1A）</h3>
+<div class="ep" id="ep-3">
+<h4 class="ephead"><span class="mth mPOST">POST</span><code class="path">/api/job-postings/parse</code><span class="pill async">非同步</span></h4>
+<p class="epsum">解析職缺資訊（非同步）</p>
+<div class="epnotes"><p>後端也會自行判斷 <code>value</code> 是否為有效 http/https URL；與
+<code>inputType</code> 不符時<strong>以實際內容為準</strong>， 並在 job
+result 回傳實際使用的 <code>inputType</code>。</p>
+<blockquote>
+<p><strong>無法擷取的欄位一律回
+<code>null</code></strong>，不回空字串、不回預設值、不編造內容（D-021、AC-02）。
+前端把 <code>null</code> 顯示為
+<code>--</code>。<code>extractedFieldCount</code> 直接用在「已讀取 x
+個欄位」。</p>
+</blockquote>
+<blockquote>
+<p>⚠️ <strong>網域白名單同時是 SSRF 防線，不只是 MVP 範圍限制。</strong>
+這是全系統<strong>唯一</strong>由後端主動對外發出 HTTP
+請求的地方（其餘上傳一律走 multipart，
+後端不去抓使用者給的網址）。若不限制網域，使用者可貼
+<code>http://169.254.169.254/</code>（雲端 metadata
+endpoint）或內網位址， 讓後端代為存取。實作時除了比對網域，還要：</p>
+<ul>
+<li>解析後的 IP
+落在私有網段（10/8、172.16/12、192.168/16、127/8、169.254/16）一律拒絕</li>
+<li>禁止跟隨跨網域重導</li>
+<li>設定抓取逾時與回應大小上限</li>
+</ul>
+</blockquote>
+</div>
+<p class="part">Request</p>
+<pre><code>POST /api/job-postings/parse
+Content-Type: application/json
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略
+Idempotency-Key: {uuid v4}       # 建議帶，避免重整造成重複扣模型成本</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>Idempotency-Key</code></td><td class='ty'>header</td><td class='rq'></td><td class='ty'>string</td><td>UUID v4。相同 key 在 24 小時內重送會回傳第一次的結果，
+不會重複建立資源或重複扣模型成本（Spec §13.3）。
+</td></tr></table></div></div>
+<p class="tcap">Request body</p><pre><code>{
+  "inputType": "TEXT",
+  "value": "We are looking for a Product Manager to lead our billing product."
+}</code></pre>
+<div class="fieldtable"><p class="tcap">Request 欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>inputType</code></td><td class='ty'>enum</td><td class='rq'>必填</td><td>貼上文字 / 職缺連結（本輪僅支援 CakeResume）　值：<code>"TEXT"</code> / <code>"URL"</code></td></tr><tr><td><code>value</code></td><td class='ty'>string</td><td class='rq'>必填</td><td></td></tr></table></div></div>
+<p class="part">Response — HTTP 202</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "jobId": "job_01J8X2K4M7",
+    "status": "QUEUED",
+    "pollAfterMs": 1500
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.jobId</code></td><td class='ty'>string</td><td class='rq'>必填</td><td>非同步工作 id，用它去輪詢 GET /api/jobs/{jobId}</td></tr><tr><td><code>data.status</code></td><td class='ty'>enum</td><td class='rq'>必填</td><td>值：<code>"QUEUED"</code> / <code>"RUNNING"</code> / <code>"READY"</code> / <code>"FAILED"</code></td></tr><tr><td><code>data.pollAfterMs</code></td><td class='ty'>integer</td><td class='rq'></td><td>建議等待多久再發第一次輪詢，首次固定 1500</td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>合法輸入回 202，body 含 <code>jobId</code> 與
+<code>pollAfterMs</code></li><li>輪詢到 READY 時，<code>result.extraction</code>
+六個欄位齊全（擷取不到者為 null，不是空字串）</li><li><code>extractedFieldCount</code> 等於非 null
+欄位數，<code>missingFields</code> 等於 null 欄位名清單</li><li><code>inputType: TEXT</code> 但 value 是 http/https URL 時，以 URL
+處理，且 result 回傳實際使用的 <code>inputType</code></li><li>文字少於 120 字元回 422 <code>JOB_TEXT_TOO_SHORT</code></li><li>非 CakeResume 網域回 422 <code>JOB_URL_NOT_SUPPORTED</code></li><li>URL 解析後的 IP
+落在私有網段（10/8、172.16/12、192.168/16、127/8、169.254/16）一律拒絕</li><li>不跟隨跨網域重導</li><li>抓取設有逾時與回應大小上限</li><li>連結讀不到內容時 job 轉 FAILED，<code>error.code</code> 為
+<code>JOB_PAGE_UNREADABLE</code> 且 <code>retryable</code> 為 true</li><li>相同 <code>Idempotency-Key</code> 與相同內容重送，回同一個
+<code>jobId</code>，模型只被呼叫一次</li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>JOB_PAGE_UNREADABLE</code></td><td class='st st4'>422</td><td><code>job_input_try_paste_text</code></td><td class='rq'>是</td></tr><tr><td><code>JOB_URL_NOT_SUPPORTED</code></td><td class='st st4'>422</td><td><code>job_url_not_supported</code></td><td class='rq'>是</td></tr><tr><td><code>JOB_TEXT_TOO_SHORT</code></td><td class='st st4'>422</td><td><code>job_input_too_short</code></td><td class='rq'>是</td></tr><tr><td><code>MODEL_UNAVAILABLE</code></td><td class='st st5'>502</td><td><code>model_unavailable</code></td><td class='rq'>是</td></tr><tr><td><code>VALIDATION_ERROR</code></td><td class='st st4'>400</td><td><code>validation_error</code></td><td class='rq'>是</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+<p class="none">非同步 endpoint 的失敗也可能發生在 job 執行期間 —— 此時 <code>POST</code> 仍回 202，錯誤出現在 <code>GET /api/jobs/{jobId}</code> 的 <code>data.error</code>，欄位與上表相同。</p>
+</div>
+<div class="ep" id="ep-4">
+<h4 class="ephead"><span class="mth mGET">GET</span><code class="path">/api/job-postings/{id}</code><span class="pill sync">同步</span></h4>
+<p class="epsum">重新取得解析結果</p>
+<div class="epnotes"><p>重整頁面後重新取得解析結果。回傳與 job result 相同的物件。</p>
+<hr />
+</div>
+<p class="part">Request</p>
+<pre><code>GET /api/job-postings/{id}
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>id</code></td><td class='ty'>path</td><td class='rq'>必填</td><td class='ty'>string</td><td></td></tr></table></div></div>
+<p class="part">Response — HTTP 200</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "jobPostingId": "jp_01J8X2K4M7",
+    "inputType": "TEXT",
+    "sourceUrl": null,
+    "extraction": {
+      "jobTitle": "Product Manager",
+      "companyName": "Northstar Labs",
+      "industry": "SaaS / B2B 軟體",
+      "experience": "3 年以上產品管理經驗",
+      "jobDescription": null,
+      "requirements": null
+    },
+    "extractedFieldCount": 5,
+    "missingFields": [
+      "requirements"
+    ]
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.jobPostingId</code></td><td class='ty'>string</td><td class='rq'></td><td>職缺解析結果 id，建立 Mock Set 時要帶回去</td></tr><tr><td><code>data.inputType</code></td><td class='ty'>enum</td><td class='rq'></td><td>貼上文字 / 職缺連結（本輪僅支援 CakeResume）　值：<code>"TEXT"</code> / <code>"URL"</code></td></tr><tr><td><code>data.sourceUrl</code></td><td class='ty'>string?</td><td class='rq'></td><td>來源網址；inputType 為 TEXT 時是 null</td></tr><tr><td><code>data.extraction</code></td><td class='ty'>object</td><td class='rq'></td><td>**無法擷取的欄位一律回 `null`** — 不回空字串、不回預設值、不編造內容
+（Spec D-021、AC-02）。前端把 null 顯示為 `--`。
+</td></tr><tr><td><code>data.extraction.jobTitle</code></td><td class='ty'>string?</td><td class='rq'></td><td>職稱。擷取不到為 null，前端顯示「--」</td></tr><tr><td><code>data.extraction.companyName</code></td><td class='ty'>string?</td><td class='rq'></td><td>公司名稱。擷取不到為 null</td></tr><tr><td><code>data.extraction.industry</code></td><td class='ty'>string?</td><td class='rq'></td><td>產業類別。擷取不到為 null</td></tr><tr><td><code>data.extraction.experience</code></td><td class='ty'>string?</td><td class='rq'></td><td>經驗年資要求。擷取不到為 null</td></tr><tr><td><code>data.extraction.jobDescription</code></td><td class='ty'>string?</td><td class='rq'></td><td>工作內容。擷取不到為 null</td></tr><tr><td><code>data.extraction.requirements</code></td><td class='ty'>string?</td><td class='rq'></td><td>條件要求。擷取不到為 null</td></tr><tr><td><code>data.extractedFieldCount</code></td><td class='ty'>integer</td><td class='rq'></td><td>直接用在「已讀取 x 個欄位」</td></tr><tr><td><code>data.missingFields</code></td><td class='ty'>array&lt;string&gt;</td><td class='rq'></td><td>值為 null 的欄位名稱清單，可直接用來提示使用者手動補填</td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>回傳與 job result 相同形狀的物件（重整頁面可取回）</li><li>id 不存在回 404 <code>NOT_FOUND</code></li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>NOT_FOUND</code></td><td class='st st4'>404</td><td><code>not_found</code></td><td class='rq'>否</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<h3 class="sec">4.2 M-03 履歷上傳（P1A）</h3>
+<div class="ep" id="ep-5">
+<h4 class="ephead"><span class="mth mPOST">POST</span><code class="path">/api/resumes</code><span class="pill sync">同步</span></h4>
+<p class="epsum">上傳履歷 PDF（同步）</p>
+<div class="epnotes"><p><code>multipart/form-data</code>，欄位
+<code>file</code>。<strong>僅接受 PDF，≤ 10 MB。</strong> 不呼叫 AI
+模型，通常 &lt; 2 秒。</p>
+<hr />
+</div>
+<p class="part">Request</p>
+<pre><code>POST /api/resumes
+Content-Type: multipart/form-data
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略
+Idempotency-Key: {uuid v4}       # 建議帶，避免重整造成重複扣模型成本</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>Idempotency-Key</code></td><td class='ty'>header</td><td class='rq'></td><td class='ty'>string</td><td>UUID v4。相同 key 在 24 小時內重送會回傳第一次的結果，
+不會重複建立資源或重複扣模型成本（Spec §13.3）。
+</td></tr></table></div></div>
+<div class="fieldtable"><p class="tcap">表單欄位</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>file</code></td><td class='ty'>string<span class="fmt">/binary</span></td><td class='rq'>必填</td><td>PDF 檔案，≤ 10 MB</td></tr></table></div></div>
+<p class="part">Response — HTTP 201</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "resumeId": "res_01J8X2K4M7",
+    "filename": "andre-hung-resume-2026.pdf",
+    "byteSize": 842113,
+    "pageCount": 2,
+    "extractedCharCount": 4821,
+    "status": "READY"
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.resumeId</code></td><td class='ty'>string</td><td class='rq'></td><td>履歷 id，建立 Mock Set 時要帶回去</td></tr><tr><td><code>data.filename</code></td><td class='ty'>string</td><td class='rq'></td><td>使用者上傳時的原始檔名</td></tr><tr><td><code>data.byteSize</code></td><td class='ty'>integer</td><td class='rq'></td><td>檔案大小（bytes），上限 10 MB</td></tr><tr><td><code>data.pageCount</code></td><td class='ty'>integer</td><td class='rq'></td><td>PDF 頁數</td></tr><tr><td><code>data.extractedCharCount</code></td><td class='ty'>integer</td><td class='rq'></td><td>抽取出的純文字字元數。為 0 時後端回 RESUME_EMPTY</td></tr><tr><td><code>data.status</code></td><td class='ty'>enum</td><td class='rq'></td><td>履歷處理狀態，抽字完成為 READY。這是履歷本身的狀態，與非同步 job 無關　值：<code>"READY"</code></td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>上傳合法 PDF 回 201，<code>data.resumeId</code>
+有值、<code>status</code> 為 <code>READY</code></li><li><code>extractedCharCount</code> 大於 0 且與實際抽取字數一致</li><li>非 PDF（如 docx、png）回 415 <code>RESUME_UNSUPPORTED_TYPE</code></li><li>超過 10 MB 回 413 <code>UPLOAD_TOO_LARGE</code></li><li>純圖片掃描檔（抽不出文字）回 422
+<code>RESUME_EXTRACTION_FAILED</code></li><li>抽出字數為 0 回 422 <code>RESUME_EMPTY</code></li><li>履歷原文不得出現在任何 application log</li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>RESUME_UNSUPPORTED_TYPE</code></td><td class='st st4'>415</td><td><code>resume_unsupported_type</code></td><td class='rq'>是</td></tr><tr><td><code>UPLOAD_TOO_LARGE</code></td><td class='st st4'>413</td><td><code>upload_too_large</code></td><td class='rq'>是</td></tr><tr><td><code>RESUME_EXTRACTION_FAILED</code></td><td class='st st4'>422</td><td><code>resume_extraction_failed</code></td><td class='rq'>是</td></tr><tr><td><code>RESUME_EMPTY</code></td><td class='st st4'>422</td><td><code>resume_empty</code></td><td class='rq'>是</td></tr><tr><td><code>VALIDATION_ERROR</code></td><td class='st st4'>400</td><td><code>validation_error</code></td><td class='rq'>是</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<h3 class="sec">4.3 M-01 / M-04 建立 Mock Set（P1A）</h3>
+<div class="ep" id="ep-6">
+<h4 class="ephead"><span class="mth mPOST">POST</span><code class="path">/api/mocksets</code><span class="pill sync">同步</span></h4>
+<p class="epsum">建立 Mock Set（同步）</p>
+<div class="epnotes"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>規則</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>必填，<strong>至少 2 字元</strong>。建立後不可修改</td>
+</tr>
+<tr>
+<td><code>jobPostingId</code> / <code>resumeId</code></td>
+<td>必填，來自 §4.1 / §4.2</td>
+</tr>
+</tbody>
+</table>
+<p><strong>回應</strong></p>
+<blockquote>
+<p><strong>沒有 <code>PATCH /mocksets/{id}</code>。</strong>
+M-04／D-003：建立後 JD 與履歷不可修改，要換資料只能建新的。
+建立時同步寫入 <code>mockset_sources</code> 凍結快照（CCP 步驟 4）。</p>
+</blockquote>
+<p>⚠️ <strong><code>name</code> 是使用者輸入的練習名稱，不是 JD
+解析出的職稱。</strong> 職稱在 <code>jobPosting.jobTitle</code>。 產品
+Spec §4.7.2 特別區分過這兩者，實作時很容易搞混。</p>
+</div>
+<p class="part">Request</p>
+<pre><code>POST /api/mocksets
+Content-Type: application/json
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略
+Idempotency-Key: {uuid v4}       # 建議帶，避免重整造成重複扣模型成本</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>Idempotency-Key</code></td><td class='ty'>header</td><td class='rq'></td><td class='ty'>string</td><td>UUID v4。相同 key 在 24 小時內重送會回傳第一次的結果，
+不會重複建立資源或重複扣模型成本（Spec §13.3）。
+</td></tr></table></div></div>
+<p class="tcap">Request body</p><pre><code>{
+  "name": "PM (Northstar Labs)",
+  "jobPostingId": "jp_01J8X2K4M7",
+  "resumeId": "res_01J8X2K4M7"
+}</code></pre>
+<div class="fieldtable"><p class="tcap">Request 欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>name</code></td><td class='ty'>string</td><td class='rq'>必填</td><td>練習名稱。建立後不得更改。</td></tr><tr><td><code>jobPostingId</code></td><td class='ty'>string</td><td class='rq'>必填</td><td></td></tr><tr><td><code>resumeId</code></td><td class='ty'>string</td><td class='rq'>必填</td><td></td></tr></table></div></div>
+<p class="part">Response — HTTP 201</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "id": "ms_01J8X2K4M7",
+    "name": "PM (Northstar Labs)",
+    "status": "READY",
+    "createdAt": "2026-09-10T02:11:07Z",
+    "jobPosting": {
+      "jobTitle": "Product Manager",
+      "companyName": "Northstar Labs",
+      "industry": "SaaS / B2B 軟體",
+      "experience": "3 年以上產品管理經驗",
+      "jobDescription": null,
+      "requirements": null,
+      "id": "…",
+      "sourceUrl": null
+    },
+    "resume": {
+      "id": "…",
+      "filename": "…"
+    }
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.id</code></td><td class='ty'>string</td><td class='rq'></td><td>Mock Set id</td></tr><tr><td><code>data.name</code></td><td class='ty'>string</td><td class='rq'></td><td>使用者自訂的練習名稱，建立後不可更改</td></tr><tr><td><code>data.status</code></td><td class='ty'>enum</td><td class='rq'></td><td>Mock Set 狀態，建立完成為 READY　值：<code>"READY"</code></td></tr><tr><td><code>data.createdAt</code></td><td class='ty'>string<span class="fmt">/date-time</span></td><td class='rq'></td><td>建立時間（ISO 8601）</td></tr><tr><td><code>data.jobPosting</code></td><td class='ty'>object</td><td class='rq'></td><td></td></tr><tr><td><code>data.resume</code></td><td class='ty'>object</td><td class='rq'></td><td></td></tr><tr><td><code>data.resume.id</code></td><td class='ty'>string</td><td class='rq'></td><td></td></tr><tr><td><code>data.resume.filename</code></td><td class='ty'>string</td><td class='rq'></td><td></td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>合法輸入回 201，<code>data.mocksetId</code> 有值</li><li><code>mockset_sources</code> 同時寫入 JD 與履歷的凍結快照</li><li>快照建立後，即使原 <code>job_postings</code> 被更新，該 Mock Set
+讀到的仍是快照內容</li><li><code>name</code> 少於 2 字元回 400 <code>VALIDATION_ERROR</code></li><li><code>jobPostingId</code> 或 <code>resumeId</code> 不存在回 400
+<code>MOCKSET_SOURCE_MISSING</code></li><li>沒有提供 PATCH／PUT endpoint（建立後不可修改）</li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>VALIDATION_ERROR</code></td><td class='st st4'>400</td><td><code>validation_error</code></td><td class='rq'>是</td></tr><tr><td><code>MOCKSET_SOURCE_MISSING</code></td><td class='st st4'>400</td><td><code>mockset_source_missing</code></td><td class='rq'>是</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<div class="ep" id="ep-7">
+<h4 class="ephead"><span class="mth mGET">GET</span><code class="path">/api/mocksets</code><span class="pill sync">同步</span></h4>
+<p class="epsum">列出 Mock Set（P3）</p>
+<p><strong>P3 才需要。</strong> 已與 PM 對齊：MVP 只做 1 組 Mock Set，P1
+由前端把 <code>mocksetId</code> 存在 localStorage，P2C 起改由
+<code>GET /api/me</code> 的 <code>defaultMocksetId</code> 提供。</p>
+
+<p class="part">Request</p>
+<pre><code>GET /api/mocksets
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略</code></pre>
+<p class="none">無參數、無 request body。</p>
+<p class="part">Response — HTTP 200</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "size": null,
+  "page": 0,
+  "totalPages": 1,
+  "total": 5,
+  "data": [
+    {
+      "mocksets": [
+        {
+          "id": "ms_01J8X2K4M7",
+          "name": "PM (Northstar Labs)",
+          "status": "READY",
+          "createdAt": "2026-09-10T02:11:07Z"
+        }
+      ]
+    }
+  ]
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>size</code></td><td class='ty'>integer?</td><td class='rq'></td><td>每頁筆數；未分頁為 null</td></tr><tr><td><code>page</code></td><td class='ty'>integer</td><td class='rq'></td><td>目前頁碼，從 0 開始</td></tr><tr><td><code>totalPages</code></td><td class='ty'>integer</td><td class='rq'></td><td>總頁數</td></tr><tr><td><code>total</code></td><td class='ty'>integer</td><td class='rq'></td><td>總筆數</td></tr><tr><td><code>data[]</code></td><td class='ty'>array&lt;object&gt;</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>回 <code>CommonPageResp</code>，含 <code>page</code> /
+<code>total</code> / <code>totalPages</code></li><li>無資料時 <code>data</code> 為空陣列而非 null，且仍回 200</li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<div class="ep" id="ep-8">
+<h4 class="ephead"><span class="mth mGET">GET</span><code class="path">/api/mocksets/{id}</code><span class="pill sync">同步</span></h4>
+<p class="epsum">取得 Mock Set</p>
+<div class="epnotes"><p>取回單一 Mock Set 與其凍結快照摘要。</p>
+<blockquote>
+<p>P1A 無帳號流程下，前端請把 <code>mocksetId</code> 存在
+<code>localStorage</code>，這是重整頁面後找回進度的唯一方法。 P2C
+登入上線後改由 <code>GET /api/me</code> 的 <code>defaultMocksetId</code>
+提供。</p>
+</blockquote>
+</div>
+<p class="part">Request</p>
+<pre><code>GET /api/mocksets/{id}
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>id</code></td><td class='ty'>path</td><td class='rq'>必填</td><td class='ty'>string</td><td></td></tr></table></div></div>
+<p class="part">Response — HTTP 200</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "id": "ms_01J8X2K4M7",
+    "name": "PM (Northstar Labs)",
+    "status": "READY",
+    "createdAt": "2026-09-10T02:11:07Z",
+    "jobPosting": {
+      "jobTitle": "Product Manager",
+      "companyName": "Northstar Labs",
+      "industry": "SaaS / B2B 軟體",
+      "experience": "3 年以上產品管理經驗",
+      "jobDescription": null,
+      "requirements": null,
+      "id": "…",
+      "sourceUrl": null
+    },
+    "resume": {
+      "id": "…",
+      "filename": "…"
+    }
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.id</code></td><td class='ty'>string</td><td class='rq'></td><td>Mock Set id</td></tr><tr><td><code>data.name</code></td><td class='ty'>string</td><td class='rq'></td><td>使用者自訂的練習名稱，建立後不可更改</td></tr><tr><td><code>data.status</code></td><td class='ty'>enum</td><td class='rq'></td><td>Mock Set 狀態，建立完成為 READY　值：<code>"READY"</code></td></tr><tr><td><code>data.createdAt</code></td><td class='ty'>string<span class="fmt">/date-time</span></td><td class='rq'></td><td>建立時間（ISO 8601）</td></tr><tr><td><code>data.jobPosting</code></td><td class='ty'>object</td><td class='rq'></td><td></td></tr><tr><td><code>data.resume</code></td><td class='ty'>object</td><td class='rq'></td><td></td></tr><tr><td><code>data.resume.id</code></td><td class='ty'>string</td><td class='rq'></td><td></td></tr><tr><td><code>data.resume.filename</code></td><td class='ty'>string</td><td class='rq'></td><td></td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>回傳 Mock Set 與其凍結快照摘要</li><li>id 不存在回 404 <code>NOT_FOUND</code></li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>NOT_FOUND</code></td><td class='st st4'>404</td><td><code>not_found</code></td><td class='rq'>否</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<div class="ep" id="ep-9">
+<h4 class="ephead"><span class="mth mDELETE">DELETE</span><code class="path">/api/mocksets/{id}</code><span class="pill sync">同步</span></h4>
+<p class="epsum">刪除 Mock Set（P3）</p>
+<div class="epnotes"><p>刪除 Mock
+Set。關聯的題目集、題目、回答、分析一併刪除（<code>ON DELETE CASCADE</code>）。</p>
+<hr />
+</div>
+<p class="part">Request</p>
+<pre><code>DELETE /api/mocksets/{id}
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>id</code></td><td class='ty'>path</td><td class='rq'>必填</td><td class='ty'>string</td><td></td></tr></table></div></div>
+<p class="part">Response — HTTP 204</p>
+<p class="none">無回應內容（204 No Content）。</p>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>回 204，無 body</li><li>關聯的 question_sets / questions / attempts / analyses 一併刪除（ON
+DELETE CASCADE）</li><li>重複刪除同一個 id 回 404 <code>NOT_FOUND</code></li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>NOT_FOUND</code></td><td class='st st4'>404</td><td><code>not_found</code></td><td class='rq'>否</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<h3 class="sec">4.4 M-05 選擇題型（P1A）</h3>
+<h3 class="sec">4.5 M-06 / M-07 生成與沿用題目（P1A / P2A）</h3>
+<div class="ep" id="ep-10">
+<h4 class="ephead"><span class="mth mGET">GET</span><code class="path">/api/mocksets/{id}/question-sets</code><span class="pill sync">同步</span></h4>
+<p class="epsum">查詢該題型是否已有題目（沿用題目，M-07）</p>
+<div class="epnotes"><p>使用者在 4.2
+點「下一步」時，<strong>前端請先呼叫這支</strong>。已有題目就直接進
+4.3，跳過 loading，也不重複扣模型成本。</p>
+<blockquote>
+<p><code>category</code> 是<strong>網址後面的 query string，不是
+header</strong>。缺少或值不在上述四個之內回
+<code>VALIDATION_ERROR</code>(400)。</p>
+</blockquote>
+<pre><code>GET /api/mocksets/ms_01M1F5RYE0WFD915BGK9HHKPGW/question-sets?category=INTRODUCTION</code></pre>
+<blockquote>
+<p>刻意用 <code>200 + exists:false</code> 而非
+<code>404</code>，讓前端不必把「還沒生成」當成錯誤處理。</p>
+</blockquote>
+</div>
+<p class="part">Request</p>
+<pre><code>GET /api/mocksets/{id}/question-sets
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>id</code></td><td class='ty'>path</td><td class='rq'>必填</td><td class='ty'>string</td><td></td></tr><tr><td><code>category</code></td><td class='ty'>query</td><td class='rq'>必填</td><td class='ty'>enum</td><td>　值：<code>INTRODUCTION</code> / <code>BEHAVIORAL</code> / <code>TECHNICAL</code> / <code>CULTURAL_FIT</code></td></tr></table></div></div>
+<p class="part">Response — HTTP 200</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "exists": true,
+    "questionSet": {
+      "id": "qs_01J8X2K4M7",
+      "mocksetId": "…",
+      "category": "INTRODUCTION",
+      "status": "READY",
+      "questionCount": 5
+    }
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.exists</code></td><td class='ty'>boolean</td><td class='rq'>必填</td><td></td></tr><tr><td><code>data.questionSet</code></td><td class='ty'>object?</td><td class='rq'></td><td></td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>該題型已有題目回 200 且 <code>exists</code> 為 true，附
+<code>questionSet</code></li><li>尚未生成回 <strong>200</strong> 且 <code>exists</code> 為 false ——
+<strong>不是 404</strong></li><li>缺少 <code>category</code> query 參數回 400
+<code>VALIDATION_ERROR</code></li><li><code>category</code> 不在四個列舉值內回 400
+<code>VALIDATION_ERROR</code></li><li>此 endpoint 永不呼叫模型（可用 provider 呼叫次數斷言）</li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>VALIDATION_ERROR</code></td><td class='st st4'>400</td><td><code>validation_error</code></td><td class='rq'>是</td></tr><tr><td><code>NOT_FOUND</code></td><td class='st st4'>404</td><td><code>not_found</code></td><td class='rq'>否</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<div class="ep" id="ep-11">
+<h4 class="ephead"><span class="mth mPOST">POST</span><code class="path">/api/mocksets/{id}/question-sets</code><span class="pill dual">同步／非同步</span></h4>
+<p class="epsum">生成 5 題（已有題目則同步沿用，否則非同步生成，約 15-40 秒）</p>
+<div class="epnotes"><p><code>{ "category": "INTRODUCTION" }</code> →
+<code>202 { jobId }</code>。 若已有題目，直接回
+<code>200 { status: "READY", questionSetId, reused: true }</code>，<strong>不重新生成</strong>（M-07）。</p>
+<blockquote>
+<p><code>questionTranslation</code> 是繁體中文翻譯，顯示在題目卡
+supporting text（D-031、AC-11）。 <code>position</code> 從 1
+開始，前端顯示為兩位數編號 <code>01</code>、<code>02</code>……</p>
+</blockquote>
+</div>
+<p class="part">Request</p>
+<pre><code>POST /api/mocksets/{id}/question-sets
+Content-Type: application/json
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略
+Idempotency-Key: {uuid v4}       # 建議帶，避免重整造成重複扣模型成本</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>id</code></td><td class='ty'>path</td><td class='rq'>必填</td><td class='ty'>string</td><td></td></tr><tr><td><code>Idempotency-Key</code></td><td class='ty'>header</td><td class='rq'></td><td class='ty'>string</td><td>UUID v4。相同 key 在 24 小時內重送會回傳第一次的結果，
+不會重複建立資源或重複扣模型成本（Spec §13.3）。
+</td></tr></table></div></div>
+<p class="tcap">Request body</p><pre><code>{
+  "category": "INTRODUCTION"
+}</code></pre>
+<div class="fieldtable"><p class="tcap">Request 欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>category</code></td><td class='ty'>enum</td><td class='rq'>必填</td><td>自我介紹 / 行為問題 / 技術問題 / 文化契合　值：<code>"INTRODUCTION"</code> / <code>"BEHAVIORAL"</code> / <code>"TECHNICAL"</code> / <code>"CULTURAL_FIT"</code></td></tr></table></div></div>
+<p class="part">Response — 這支有兩種成功回應</p>
+<p class="dualnote">同一個請求依情況回不同狀態碼，<b>前端要用 HTTP status 分流</b>：<code>200</code> 已有題目，直接沿用；<code>202</code> 已接受，非同步處理中。請輪詢 GET /jobs/{jobId}。</p>
+<p class="part sub">HTTP 200 — 已有題目，直接沿用</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "status": "READY",
+    "questionSetId": "…",
+    "reused": true
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.status</code></td><td class='ty'>enum</td><td class='rq'></td><td>值：<code>"READY"</code></td></tr><tr><td><code>data.questionSetId</code></td><td class='ty'>string</td><td class='rq'></td><td></td></tr><tr><td><code>data.reused</code></td><td class='ty'>enum</td><td class='rq'></td><td>值：<code>true</code></td></tr></table></div></div>
+<p class="part sub">HTTP 202 — 已接受，非同步處理中。請輪詢 GET /jobs/{jobId}</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "jobId": "job_01J8X2K4M7",
+    "status": "QUEUED",
+    "pollAfterMs": 1500
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.jobId</code></td><td class='ty'>string</td><td class='rq'>必填</td><td>非同步工作 id，用它去輪詢 GET /api/jobs/{jobId}</td></tr><tr><td><code>data.status</code></td><td class='ty'>enum</td><td class='rq'>必填</td><td>值：<code>"QUEUED"</code> / <code>"RUNNING"</code> / <code>"READY"</code> / <code>"FAILED"</code></td></tr><tr><td><code>data.pollAfterMs</code></td><td class='ty'>integer</td><td class='rq'></td><td>建議等待多久再發第一次輪詢，首次固定 1500</td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>該題型尚無題目時回 202 + <code>jobId</code>；輪詢到 READY 後
+<code>questions</code> 恰為 5 題</li><li>該題型已有題目時回 <strong>200</strong> 且 <code>reused</code> 為
+true，<strong>不呼叫模型</strong>（M-07）</li><li>生成的題目使用凍結快照，而非 <code>job_postings</code> 的即時內容</li><li>同一 <code>(mocksetId, category)</code> 併發送兩次，只會建立一組
+question_set（UNIQUE 約束）</li><li>模型輸出不合 schema 時，後端 repair retry 一次；仍失敗則 job
+FAILED、<code>error.code</code> 為
+<code>QUESTION_GENERATION_INVALID</code></li><li>JD／履歷資訊不足時回
+<code>QUESTION_GENERATION_BLOCKED</code>，不產出低品質題目</li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>QUESTION_GENERATION_INVALID</code></td><td class='st st5'>502</td><td><code>question_generation_retry</code></td><td class='rq'>是</td></tr><tr><td><code>QUESTION_GENERATION_BLOCKED</code></td><td class='st st4'>422</td><td><code>question_generation_blocked</code></td><td class='rq'>是</td></tr><tr><td><code>MODEL_QUOTA_EXCEEDED</code></td><td class='st st4'>429</td><td><code>model_quota_exceeded</code></td><td class='rq'>否</td></tr><tr><td><code>VALIDATION_ERROR</code></td><td class='st st4'>400</td><td><code>validation_error</code></td><td class='rq'>是</td></tr><tr><td><code>NOT_FOUND</code></td><td class='st st4'>404</td><td><code>not_found</code></td><td class='rq'>否</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+<p class="none">非同步 endpoint 的失敗也可能發生在 job 執行期間 —— 此時 <code>POST</code> 仍回 202，錯誤出現在 <code>GET /api/jobs/{jobId}</code> 的 <code>data.error</code>，欄位與上表相同。</p>
+</div>
+<div class="ep" id="ep-12">
+<h4 class="ephead"><span class="mth mGET">GET</span><code class="path">/api/question-sets/{id}</code><span class="pill sync">同步</span></h4>
+<p class="epsum">取得題目集與題目列表</p>
+<div class="epnotes"><p>回傳與上方 job result 相同形狀。</p>
+<hr />
+</div>
+<p class="part">Request</p>
+<pre><code>GET /api/question-sets/{id}
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>id</code></td><td class='ty'>path</td><td class='rq'>必填</td><td class='ty'>string</td><td></td></tr></table></div></div>
+<p class="part">Response — HTTP 200</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "questionSet": {
+      "id": "qs_01J8X2K4M7",
+      "mocksetId": "…",
+      "category": "INTRODUCTION",
+      "status": "READY",
+      "questionCount": 5
+    },
+    "quota": {
+      "used": 0,
+      "limit": 3,
+      "remaining": 3,
+      "resetAt": "2026-09-11T00:00:00+08:00"
+    },
+    "questions": [
+      {
+        "id": "q_01J8X2K4M7",
+        "position": 1,
+        "questionText": "Why are you interested in this Product Manager role?",
+        "questionTranslation": "你為什麼對這個產品經理職位有興趣？",
+        "difficulty": "EASY",
+        "origin": "INITIAL",
+        "attemptCount": 0,
+        "hasReferenceAnswer": true
+      }
+    ]
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.questionSet</code></td><td class='ty'>object</td><td class='rq'></td><td></td></tr><tr><td><code>data.questionSet.id</code></td><td class='ty'>string</td><td class='rq'></td><td>題目集 id</td></tr><tr><td><code>data.questionSet.mocksetId</code></td><td class='ty'>string</td><td class='rq'></td><td>所屬 Mock Set id</td></tr><tr><td><code>data.questionSet.category</code></td><td class='ty'>enum</td><td class='rq'></td><td>自我介紹 / 行為問題 / 技術問題 / 文化契合　值：<code>"INTRODUCTION"</code> / <code>"BEHAVIORAL"</code> / <code>"TECHNICAL"</code> / <code>"CULTURAL_FIT"</code></td></tr><tr><td><code>data.questionSet.status</code></td><td class='ty'>enum</td><td class='rq'></td><td>題目集狀態，生成完成為 READY　值：<code>"READY"</code></td></tr><tr><td><code>data.questionSet.questionCount</code></td><td class='ty'>integer</td><td class='rq'></td><td>題目數量，首次生成固定 5</td></tr><tr><td><code>data.quota</code></td><td class='ty'>object</td><td class='rq'></td><td>每日新增題目額度，以「Mock Set＋題型」為單位。生成失敗不消耗額度。</td></tr><tr><td><code>data.quota.used</code></td><td class='ty'>integer</td><td class='rq'></td><td>本日已新增題數</td></tr><tr><td><code>data.quota.limit</code></td><td class='ty'>integer</td><td class='rq'></td><td>每日上限，固定 3</td></tr><tr><td><code>data.quota.remaining</code></td><td class='ty'>integer</td><td class='rq'></td><td>本日剩餘可新增題數，為 0 時前端應停用「新增題目」按鈕</td></tr><tr><td><code>data.quota.resetAt</code></td><td class='ty'>string<span class="fmt">/date-time</span></td><td class='rq'></td><td>額度重置時間，日界線為 Asia/Taipei 的午夜</td></tr><tr><td><code>data.questions</code></td><td class='ty'>array&lt;Question&gt;</td><td class='rq'></td><td>題目清單，首次生成固定 5 題，依 position 排序</td></tr><tr><td><code>data.questions[].id</code></td><td class='ty'>string</td><td class='rq'></td><td>題目 id</td></tr><tr><td><code>data.questions[].position</code></td><td class='ty'>integer</td><td class='rq'></td><td>從 1 開始。前端顯示為兩位數編號 01、02……</td></tr><tr><td><code>data.questions[].questionText</code></td><td class='ty'>string</td><td class='rq'></td><td>英文題目原文</td></tr><tr><td><code>data.questions[].questionTranslation</code></td><td class='ty'>string</td><td class='rq'></td><td>繁體中文翻譯，顯示在題目卡 supporting text（Spec D-031、AC-11）</td></tr><tr><td><code>data.questions[].difficulty</code></td><td class='ty'>enum</td><td class='rq'></td><td>簡單 / 中等 / 困難　值：<code>"EASY"</code> / <code>"MEDIUM"</code> / <code>"HARD"</code></td></tr><tr><td><code>data.questions[].origin</code></td><td class='ty'>enum</td><td class='rq'></td><td>題目來源：INITIAL 首次生成 / ADDED 使用者新增　值：<code>"INITIAL"</code> / <code>"ADDED"</code></td></tr><tr><td><code>data.questions[].attemptCount</code></td><td class='ty'>integer</td><td class='rq'></td><td>這一題已回答過幾次。大於 0 時前端顯示「參考前次答案」而非「生成參考答案」</td></tr><tr><td><code>data.questions[].hasReferenceAnswer</code></td><td class='ty'>boolean</td><td class='rq'></td><td>是否已有參考答案。false 時才顯示「生成參考答案」按鈕</td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>回傳題目集與其題目列表，依 <code>position</code> 由小到大排序</li><li>id 不存在回 404 <code>NOT_FOUND</code></li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>NOT_FOUND</code></td><td class='st st4'>404</td><td><code>not_found</code></td><td class='rq'>否</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<h3 class="sec">4.6 M-08 / M-18 選擇與新增題目</h3>
+<div class="ep" id="ep-13">
+<h4 class="ephead"><span class="mth mGET">GET</span><code class="path">/api/questions/{id}</code><span class="pill sync">同步</span></h4>
+<p class="epsum">取得單題詳情</p>
+<div class="epnotes"><blockquote>
+<p><strong><code>attemptCount</code> 決定 4.4
+顯示哪個按鈕</strong>：<code>0</code> →
+「生成參考答案」；<code>≥1</code> → 「參考前次答案」（4.4.4.6）。</p>
+</blockquote>
+</div>
+<p class="part">Request</p>
+<pre><code>GET /api/questions/{id}
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>id</code></td><td class='ty'>path</td><td class='rq'>必填</td><td class='ty'>string</td><td></td></tr></table></div></div>
+<p class="part">Response — HTTP 200</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "id": "q_01J8X2K4M7",
+    "position": 1,
+    "questionText": "Why are you interested in this Product Manager role?",
+    "questionTranslation": "你為什麼對這個產品經理職位有興趣？",
+    "difficulty": "EASY",
+    "origin": "INITIAL",
+    "attemptCount": 0,
+    "hasReferenceAnswer": true,
+    "questionSetId": "…",
+    "mocksetId": "…",
+    "category": "INTRODUCTION",
+    "latestAttemptId": null,
+    "referenceAnswerSource": "USER_REQUESTED"
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.id</code></td><td class='ty'>string</td><td class='rq'></td><td>題目 id</td></tr><tr><td><code>data.position</code></td><td class='ty'>integer</td><td class='rq'></td><td>從 1 開始。前端顯示為兩位數編號 01、02……</td></tr><tr><td><code>data.questionText</code></td><td class='ty'>string</td><td class='rq'></td><td>英文題目原文</td></tr><tr><td><code>data.questionTranslation</code></td><td class='ty'>string</td><td class='rq'></td><td>繁體中文翻譯，顯示在題目卡 supporting text（Spec D-031、AC-11）</td></tr><tr><td><code>data.difficulty</code></td><td class='ty'>enum</td><td class='rq'></td><td>簡單 / 中等 / 困難　值：<code>"EASY"</code> / <code>"MEDIUM"</code> / <code>"HARD"</code></td></tr><tr><td><code>data.origin</code></td><td class='ty'>enum</td><td class='rq'></td><td>題目來源：INITIAL 首次生成 / ADDED 使用者新增　值：<code>"INITIAL"</code> / <code>"ADDED"</code></td></tr><tr><td><code>data.attemptCount</code></td><td class='ty'>integer</td><td class='rq'></td><td>這一題已回答過幾次。大於 0 時前端顯示「參考前次答案」而非「生成參考答案」</td></tr><tr><td><code>data.hasReferenceAnswer</code></td><td class='ty'>boolean</td><td class='rq'></td><td>是否已有參考答案。false 時才顯示「生成參考答案」按鈕</td></tr><tr><td><code>data.questionSetId</code></td><td class='ty'>string</td><td class='rq'></td><td></td></tr><tr><td><code>data.mocksetId</code></td><td class='ty'>string</td><td class='rq'></td><td></td></tr><tr><td><code>data.category</code></td><td class='ty'>enum</td><td class='rq'></td><td>自我介紹 / 行為問題 / 技術問題 / 文化契合　值：<code>"INTRODUCTION"</code> / <code>"BEHAVIORAL"</code> / <code>"TECHNICAL"</code> / <code>"CULTURAL_FIT"</code></td></tr><tr><td><code>data.latestAttemptId</code></td><td class='ty'>string?</td><td class='rq'></td><td></td></tr><tr><td><code>data.referenceAnswerSource</code></td><td class='ty'>enum?</td><td class='rq'></td><td>值：<code>"USER_REQUESTED"</code> / <code>"FROM_ANALYSIS"</code> / <code>null</code></td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li><code>attemptCount</code> 與該題實際 attempt 筆數一致</li><li><code>hasReferenceAnswer</code> 反映 reference_answers
+是否有該題資料</li><li>id 不存在回 404 <code>NOT_FOUND</code></li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>NOT_FOUND</code></td><td class='st st4'>404</td><td><code>not_found</code></td><td class='rq'>否</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<div class="ep" id="ep-14">
+<h4 class="ephead"><span class="mth mPOST">POST</span><code class="path">/api/question-sets/{id}/questions</code><span class="pill async">非同步</span></h4>
+<p class="epsum">新增 1 題（非同步，P2B）</p>
+<div class="epnotes"><p>每次新增 <strong>1 題</strong>。每日上限 <strong>3
+題</strong>，以「Mock Set＋題型」為單位，日界線用
+<strong>Asia/Taipei</strong>。</p>
+<p><strong>錯誤</strong></p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>情境</th>
+<th>前端</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ADD_QUESTION_LIMIT_REACHED</code>(429)</td>
+<td>當日已成功新增 3 題</td>
+<td>按鈕 Disabled，「已達本日上限」</td>
+</tr>
+<tr>
+<td><code>QUESTION_LIMIT_REACHED</code>(409)</td>
+<td>該題型已達 20 題（D-011）</td>
+<td><strong>文案待 PM 補</strong>，見 §6</td>
+</tr>
+<tr>
+<td><code>QUESTION_GENERATION_INVALID</code></td>
+<td>生成失敗</td>
+<td>按鈕恢復 Enabled。<strong>不消耗當日額度</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+</div>
+<p class="part">Request</p>
+<pre><code>POST /api/question-sets/{id}/questions
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略
+Idempotency-Key: {uuid v4}       # 建議帶，避免重整造成重複扣模型成本</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>id</code></td><td class='ty'>path</td><td class='rq'>必填</td><td class='ty'>string</td><td></td></tr><tr><td><code>Idempotency-Key</code></td><td class='ty'>header</td><td class='rq'></td><td class='ty'>string</td><td>UUID v4。相同 key 在 24 小時內重送會回傳第一次的結果，
+不會重複建立資源或重複扣模型成本（Spec §13.3）。
+</td></tr></table></div></div>
+<p class="part">Response — HTTP 202</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "jobId": "job_01J8X2K4M7",
+    "status": "QUEUED",
+    "pollAfterMs": 1500
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.jobId</code></td><td class='ty'>string</td><td class='rq'>必填</td><td>非同步工作 id，用它去輪詢 GET /api/jobs/{jobId}</td></tr><tr><td><code>data.status</code></td><td class='ty'>enum</td><td class='rq'>必填</td><td>值：<code>"QUEUED"</code> / <code>"RUNNING"</code> / <code>"READY"</code> / <code>"FAILED"</code></td></tr><tr><td><code>data.pollAfterMs</code></td><td class='ty'>integer</td><td class='rq'></td><td>建議等待多久再發第一次輪詢，首次固定 1500</td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>本日額度未滿時回 202；輪詢到 READY 後新增恰好 1
+題，<code>origin</code> 為 <code>ADDED</code></li><li><code>quota.used</code> 只在題目成功寫入後 +1；job FAILED
+時額度不變</li><li>本日已用滿 3 次回 429 <code>ADD_QUESTION_LIMIT_REACHED</code></li><li>該題型已達 20 題回 409 <code>QUESTION_LIMIT_REACHED</code></li><li>額度以 Asia/Taipei 為日界線，<code>quota.resetAt</code>
+為當地午夜</li><li>新題目與既有題目不重複（prompt 帶入既有題目做去重）</li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>ADD_QUESTION_LIMIT_REACHED</code></td><td class='st st4'>429</td><td><code>add_question_limit_reached</code></td><td class='rq'>否</td></tr><tr><td><code>QUESTION_LIMIT_REACHED</code></td><td class='st st4'>409</td><td><code>question_limit_reached</code></td><td class='rq'>否</td></tr><tr><td><code>QUESTION_GENERATION_INVALID</code></td><td class='st st5'>502</td><td><code>question_generation_retry</code></td><td class='rq'>是</td></tr><tr><td><code>VALIDATION_ERROR</code></td><td class='st st4'>400</td><td><code>validation_error</code></td><td class='rq'>是</td></tr><tr><td><code>NOT_FOUND</code></td><td class='st st4'>404</td><td><code>not_found</code></td><td class='rq'>否</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+<p class="none">非同步 endpoint 的失敗也可能發生在 job 執行期間 —— 此時 <code>POST</code> 仍回 202，錯誤出現在 <code>GET /api/jobs/{jobId}</code> 的 <code>data.error</code>，欄位與上表相同。</p>
+</div>
+<h3 class="sec">4.7 M-09 / M-10 練習回答（P1B 文字 / P2B 語音）</h3>
+<div class="ep" id="ep-15">
+<h4 class="ephead"><span class="mth mPOST">POST</span><code class="path">/api/questions/{id}/attempts</code><span class="pill dual">同步／非同步</span></h4>
+<p class="epsum">建立一次回答（文字同步回 201 / 語音非同步回 202）</p>
+<div class="epnotes"><p><strong>文字模式（P1B）— <code>application/json</code>，同步回
+<code>201</code></strong></p>
+<table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>規則</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>content</code></td>
+<td>有效內容 <strong>100–2000
+字元</strong>；僅允許英文字母、數字、空格、半形標點與換行（4.4.4.1）</td>
+</tr>
+<tr>
+<td><code>durationSeconds</code></td>
+<td>前端計時秒數，供分析參考。<strong>後端不用它擋送出</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>語音模式（P2B）— <code>multipart/form-data</code>，非同步回
+<code>202</code></strong></p>
+<p>欄位 <code>inputMode=VOICE</code>、<code>audio</code>（≤ 25 MB，支援
+webm/ogg/mp4/mpeg/wav）、<code>durationSeconds</code>。</p>
+<p><strong>Attempt 物件</strong></p>
+<blockquote>
+<p>⚠️ <strong>90 秒限制：後端只驗文字長度，不驗時間。</strong>
+<code>durationSeconds</code> 由瀏覽器提供，無法可信驗證。90
+秒倒數是<strong>前端 enforcement</strong>： 到 00:00
+鎖定輸入欄位、不自動送出、不自動跳轉（AC-05）。
+<strong>語音則不同</strong> —— 後端用 ffprobe 驗證音檔真實長度，超過
+90s+5s 容差回 <code>ANSWER_TOO_LONG</code>。</p>
+</blockquote>
+<blockquote>
+<p><code>segments</code>
+是逐字稿時間序，文字模式回空陣列。4.5「本次回答」要顯示語音的對應時間區間就靠它。
+逐字稿<strong>不可編輯</strong>（D-016、M-10），API
+沒有提供修改的方法。</p>
+</blockquote>
+<blockquote>
+<p><strong>重錄取代規則</strong>：同一題在分析完成前重新送出，舊的未分析
+attempt 標為 <code>SUPERSEDED</code>， <code>attemptNumber</code>
+不跳號（§17.2：成功送出分析時才保存 Attempt）。</p>
+</blockquote>
+</div>
+<p class="part">Request</p>
+<pre><code>POST /api/questions/{id}/attempts
+Content-Type: application/json
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略
+Idempotency-Key: {uuid v4}       # 建議帶，避免重整造成重複扣模型成本</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>id</code></td><td class='ty'>path</td><td class='rq'>必填</td><td class='ty'>string</td><td></td></tr><tr><td><code>Idempotency-Key</code></td><td class='ty'>header</td><td class='rq'></td><td class='ty'>string</td><td>UUID v4。相同 key 在 24 小時內重送會回傳第一次的結果，
+不會重複建立資源或重複扣模型成本（Spec §13.3）。
+</td></tr></table></div></div>
+<p class="tcap">Request body</p><pre><code>{
+  "inputMode": "TEXT",
+  "content": "…",
+  "durationSeconds": 78
+}</code></pre>
+<div class="fieldtable"><p class="tcap">Request 欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>inputMode</code></td><td class='ty'>enum</td><td class='rq'>必填</td><td>值：<code>"TEXT"</code></td></tr><tr><td><code>content</code></td><td class='ty'>string</td><td class='rq'>必填</td><td>僅允許英文字母、數字、空格、半形標點與換行</td></tr><tr><td><code>durationSeconds</code></td><td class='ty'>integer</td><td class='rq'></td><td></td></tr></table></div></div>
+<p class="part">Response — 這支有兩種成功回應</p>
+<p class="dualnote">同一個請求依情況回不同狀態碼，<b>前端要用 HTTP status 分流</b>：<code>201</code> 文字回答建立成功；<code>202</code> 已接受，非同步處理中。請輪詢 GET /jobs/{jobId}。</p>
+<p class="part sub">HTTP 201 — 文字回答建立成功</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "attempt": {
+      "id": "att_01J8X2K4M7",
+      "questionId": "…",
+      "attemptNumber": 1,
+      "inputMode": "TEXT",
+      "content": "…",
+      "segments": [
+        {
+          "seq": 1,
+          "startMs": 0,
+          "endMs": 4200,
+          "text": "I am interested in this role"
+        }
+      ],
+      "durationSeconds": 78,
+      "transcriptStatus": "NOT_APPLICABLE",
+      "analysisStatus": "PENDING",
+      "state": "ACTIVE",
+      "createdAt": "2026-09-10T02:11:07Z"
+    }
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.attempt</code></td><td class='ty'>object</td><td class='rq'></td><td></td></tr><tr><td><code>data.attempt.id</code></td><td class='ty'>string</td><td class='rq'></td><td>回答 id，用它去觸發分析 POST /api/attempts/{id}/analysis</td></tr><tr><td><code>data.attempt.questionId</code></td><td class='ty'>string</td><td class='rq'></td><td>所屬題目 id</td></tr><tr><td><code>data.attempt.attemptNumber</code></td><td class='ty'>integer</td><td class='rq'></td><td>這是第幾次回答，從 1 開始且不跳號</td></tr><tr><td><code>data.attempt.inputMode</code></td><td class='ty'>enum</td><td class='rq'></td><td>值：<code>"TEXT"</code> / <code>"VOICE"</code></td></tr><tr><td><code>data.attempt.content</code></td><td class='ty'>string</td><td class='rq'></td><td>實際送去分析的內容。文字模式為使用者輸入；
+語音模式為 STT 逐字稿（**不可編輯**，Spec D-016、M-10）。
+</td></tr><tr><td><code>data.attempt.segments</code></td><td class='ty'>array&lt;TranscriptSegment&gt;</td><td class='rq'></td><td>逐字稿時間軸，僅語音模式有值；文字模式為空陣列</td></tr><tr><td><code>data.attempt.segments[].seq</code></td><td class='ty'>integer</td><td class='rq'></td><td>段落序號，從 1 開始</td></tr><tr><td><code>data.attempt.segments[].startMs</code></td><td class='ty'>integer</td><td class='rq'></td><td>此段在音檔中的起始毫秒</td></tr><tr><td><code>data.attempt.segments[].endMs</code></td><td class='ty'>integer</td><td class='rq'></td><td>此段在音檔中的結束毫秒</td></tr><tr><td><code>data.attempt.segments[].text</code></td><td class='ty'>string</td><td class='rq'></td><td>此段的逐字稿文字</td></tr><tr><td><code>data.attempt.durationSeconds</code></td><td class='ty'>integer</td><td class='rq'></td><td>瀏覽器計時秒數。後端保存供分析與觀測使用，
+但**不會因為它超過 90 秒而拒絕文字回答**（無法可信驗證）。
+</td></tr><tr><td><code>data.attempt.transcriptStatus</code></td><td class='ty'>enum</td><td class='rq'></td><td>逐字稿狀態：PENDING 轉寫中 / CONFIRMED 完成 / FAILED 失敗。文字模式固定 CONFIRMED　值：<code>"NOT_APPLICABLE"</code> / <code>"PENDING"</code> / <code>"CONFIRMED"</code> / <code>"FAILED"</code></td></tr><tr><td><code>data.attempt.analysisStatus</code></td><td class='ty'>enum</td><td class='rq'></td><td>分析狀態：NONE 尚未分析 / PENDING 分析中 / READY 已完成　值：<code>"PENDING"</code> / <code>"READY"</code> / <code>"FAILED"</code></td></tr><tr><td><code>data.attempt.state</code></td><td class='ty'>enum</td><td class='rq'></td><td>分析完成前重新送出，舊的未分析 attempt 會被標為 SUPERSEDED　值：<code>"ACTIVE"</code> / <code>"SUPERSEDED"</code></td></tr><tr><td><code>data.attempt.createdAt</code></td><td class='ty'>string<span class="fmt">/date-time</span></td><td class='rq'></td><td>建立時間（ISO 8601）</td></tr></table></div></div>
+<p class="part sub">HTTP 202 — 已接受，非同步處理中。請輪詢 GET /jobs/{jobId}</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "jobId": "job_01J8X2K4M7",
+    "status": "QUEUED",
+    "pollAfterMs": 1500
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.jobId</code></td><td class='ty'>string</td><td class='rq'>必填</td><td>非同步工作 id，用它去輪詢 GET /api/jobs/{jobId}</td></tr><tr><td><code>data.status</code></td><td class='ty'>enum</td><td class='rq'>必填</td><td>值：<code>"QUEUED"</code> / <code>"RUNNING"</code> / <code>"READY"</code> / <code>"FAILED"</code></td></tr><tr><td><code>data.pollAfterMs</code></td><td class='ty'>integer</td><td class='rq'></td><td>建議等待多久再發第一次輪詢，首次固定 1500</td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>文字模式合法輸入回 <strong>201</strong>，<code>data.attemptId</code>
+有值</li><li>語音模式回 <strong>202</strong> + <code>jobId</code>，輪詢到 READY 後
+<code>transcriptStatus</code> 為 <code>CONFIRMED</code></li><li><code>attemptNumber</code> 從 1 起連續遞增且不跳號</li><li>文字內容少於 100 字元回 400 <code>ANSWER_TOO_SHORT</code>，多於 2000
+回 400 <code>ANSWER_TEXT_TOO_LONG</code></li><li>含非允許字元（如中文）回 400
+<code>ANSWER_TEXT_INVALID_CHARS</code></li><li>空內容回 400 <code>EMPTY_ANSWER</code></li><li><strong>後端獨立重驗長度與字元，不信任前端</strong>（可用繞過前端的直接呼叫驗證）</li><li>音檔非支援格式回 415 <code>AUDIO_UNSUPPORTED_TYPE</code>，超過 25 MB
+回 413 <code>UPLOAD_TOO_LARGE</code></li><li>音檔實際長度以 ffprobe 驗證，超過 90 秒回 400
+<code>ANSWER_TOO_LONG</code></li><li>STT 失敗時 job FAILED、<code>error.code</code> 為
+<code>STT_FAILED</code>，且<strong>不建立半殘的 attempt</strong></li><li>回答全文與逐字稿不得出現在任何 application log</li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>ANSWER_TOO_LONG</code></td><td class='st st4'>400</td><td><code>answer_too_long</code></td><td class='rq'>否</td></tr><tr><td><code>ANSWER_TOO_SHORT</code></td><td class='st st4'>400</td><td><code>answer_too_short</code></td><td class='rq'>是</td></tr><tr><td><code>ANSWER_TEXT_TOO_LONG</code></td><td class='st st4'>400</td><td><code>answer_text_too_long</code></td><td class='rq'>是</td></tr><tr><td><code>ANSWER_TEXT_INVALID_CHARS</code></td><td class='st st4'>400</td><td><code>answer_text_invalid_chars</code></td><td class='rq'>是</td></tr><tr><td><code>EMPTY_ANSWER</code></td><td class='st st4'>400</td><td><code>answer_empty</code></td><td class='rq'>是</td></tr><tr><td><code>AUDIO_UNSUPPORTED_TYPE</code></td><td class='st st4'>415</td><td><code>audio_unsupported_type</code></td><td class='rq'>是</td></tr><tr><td><code>UPLOAD_TOO_LARGE</code></td><td class='st st4'>413</td><td><code>upload_too_large</code></td><td class='rq'>是</td></tr><tr><td><code>STT_FAILED</code></td><td class='st st5'>502</td><td><code>stt_failed</code></td><td class='rq'>是</td></tr><tr><td><code>VALIDATION_ERROR</code></td><td class='st st4'>400</td><td><code>validation_error</code></td><td class='rq'>是</td></tr><tr><td><code>NOT_FOUND</code></td><td class='st st4'>404</td><td><code>not_found</code></td><td class='rq'>否</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+<p class="none">非同步 endpoint 的失敗也可能發生在 job 執行期間 —— 此時 <code>POST</code> 仍回 202，錯誤出現在 <code>GET /api/jobs/{jobId}</code> 的 <code>data.error</code>，欄位與上表相同。</p>
+</div>
+<div class="ep" id="ep-16">
+<h4 class="ephead"><span class="mth mGET">GET</span><code class="path">/api/attempts/{id}</code><span class="pill sync">同步</span></h4>
+<p class="epsum">取得一次回答</p>
+<p class="part">Request</p>
+<pre><code>GET /api/attempts/{id}
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>id</code></td><td class='ty'>path</td><td class='rq'>必填</td><td class='ty'>string</td><td></td></tr></table></div></div>
+<p class="part">Response — HTTP 200</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "attempt": {
+      "id": "att_01J8X2K4M7",
+      "questionId": "…",
+      "attemptNumber": 1,
+      "inputMode": "TEXT",
+      "content": "…",
+      "segments": [
+        {
+          "seq": 1,
+          "startMs": 0,
+          "endMs": 4200,
+          "text": "I am interested in this role"
+        }
+      ],
+      "durationSeconds": 78,
+      "transcriptStatus": "NOT_APPLICABLE",
+      "analysisStatus": "PENDING",
+      "state": "ACTIVE",
+      "createdAt": "2026-09-10T02:11:07Z"
+    }
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.attempt</code></td><td class='ty'>object</td><td class='rq'></td><td></td></tr><tr><td><code>data.attempt.id</code></td><td class='ty'>string</td><td class='rq'></td><td>回答 id，用它去觸發分析 POST /api/attempts/{id}/analysis</td></tr><tr><td><code>data.attempt.questionId</code></td><td class='ty'>string</td><td class='rq'></td><td>所屬題目 id</td></tr><tr><td><code>data.attempt.attemptNumber</code></td><td class='ty'>integer</td><td class='rq'></td><td>這是第幾次回答，從 1 開始且不跳號</td></tr><tr><td><code>data.attempt.inputMode</code></td><td class='ty'>enum</td><td class='rq'></td><td>值：<code>"TEXT"</code> / <code>"VOICE"</code></td></tr><tr><td><code>data.attempt.content</code></td><td class='ty'>string</td><td class='rq'></td><td>實際送去分析的內容。文字模式為使用者輸入；
+語音模式為 STT 逐字稿（**不可編輯**，Spec D-016、M-10）。
+</td></tr><tr><td><code>data.attempt.segments</code></td><td class='ty'>array&lt;TranscriptSegment&gt;</td><td class='rq'></td><td>逐字稿時間軸，僅語音模式有值；文字模式為空陣列</td></tr><tr><td><code>data.attempt.segments[].seq</code></td><td class='ty'>integer</td><td class='rq'></td><td>段落序號，從 1 開始</td></tr><tr><td><code>data.attempt.segments[].startMs</code></td><td class='ty'>integer</td><td class='rq'></td><td>此段在音檔中的起始毫秒</td></tr><tr><td><code>data.attempt.segments[].endMs</code></td><td class='ty'>integer</td><td class='rq'></td><td>此段在音檔中的結束毫秒</td></tr><tr><td><code>data.attempt.segments[].text</code></td><td class='ty'>string</td><td class='rq'></td><td>此段的逐字稿文字</td></tr><tr><td><code>data.attempt.durationSeconds</code></td><td class='ty'>integer</td><td class='rq'></td><td>瀏覽器計時秒數。後端保存供分析與觀測使用，
+但**不會因為它超過 90 秒而拒絕文字回答**（無法可信驗證）。
+</td></tr><tr><td><code>data.attempt.transcriptStatus</code></td><td class='ty'>enum</td><td class='rq'></td><td>逐字稿狀態：PENDING 轉寫中 / CONFIRMED 完成 / FAILED 失敗。文字模式固定 CONFIRMED　值：<code>"NOT_APPLICABLE"</code> / <code>"PENDING"</code> / <code>"CONFIRMED"</code> / <code>"FAILED"</code></td></tr><tr><td><code>data.attempt.analysisStatus</code></td><td class='ty'>enum</td><td class='rq'></td><td>分析狀態：NONE 尚未分析 / PENDING 分析中 / READY 已完成　值：<code>"PENDING"</code> / <code>"READY"</code> / <code>"FAILED"</code></td></tr><tr><td><code>data.attempt.state</code></td><td class='ty'>enum</td><td class='rq'></td><td>分析完成前重新送出，舊的未分析 attempt 會被標為 SUPERSEDED　值：<code>"ACTIVE"</code> / <code>"SUPERSEDED"</code></td></tr><tr><td><code>data.attempt.createdAt</code></td><td class='ty'>string<span class="fmt">/date-time</span></td><td class='rq'></td><td>建立時間（ISO 8601）</td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>文字模式的 <code>segments</code> 為空陣列，語音模式有值且
+<code>startMs</code> 遞增</li><li>id 不存在回 404 <code>NOT_FOUND</code></li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>NOT_FOUND</code></td><td class='st st4'>404</td><td><code>not_found</code></td><td class='rq'>否</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<div class="ep" id="ep-17">
+<h4 class="ephead"><span class="mth mGET">GET</span><code class="path">/api/questions/{id}/attempts</code><span class="pill sync">同步</span></h4>
+<p class="epsum">取得該題所有回答（4.5「前一次回答」用）</p>
+<div class="epnotes"><p>4.5「前一次回答」用。只回 <code>state = ACTIVE</code>，依
+<code>attemptNumber</code> 升冪。保存上限 100 筆／題。</p>
+<hr />
+</div>
+<p class="part">Request</p>
+<pre><code>GET /api/questions/{id}/attempts
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>id</code></td><td class='ty'>path</td><td class='rq'>必填</td><td class='ty'>string</td><td></td></tr></table></div></div>
+<p class="part">Response — HTTP 200</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "size": null,
+  "page": 0,
+  "totalPages": 1,
+  "total": 5,
+  "data": [
+    {
+      "attempts": [
+        {
+          "id": "att_01J8X2K4M7",
+          "questionId": "…",
+          "attemptNumber": 1,
+          "inputMode": "TEXT",
+          "content": "…",
+          "segments": [
+            {
+              "seq": 1,
+              "startMs": 0,
+              "endMs": 4200,
+              "text": "I am interested in this role"
+            }
+          ],
+          "durationSeconds": 78,
+          "transcriptStatus": "NOT_APPLICABLE",
+          "analysisStatus": "PENDING",
+          "state": "ACTIVE",
+          "createdAt": "2026-09-10T02:11:07Z"
+        }
+      ]
+    }
+  ]
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>size</code></td><td class='ty'>integer?</td><td class='rq'></td><td>每頁筆數；未分頁為 null</td></tr><tr><td><code>page</code></td><td class='ty'>integer</td><td class='rq'></td><td>目前頁碼，從 0 開始</td></tr><tr><td><code>totalPages</code></td><td class='ty'>integer</td><td class='rq'></td><td>總頁數</td></tr><tr><td><code>total</code></td><td class='ty'>integer</td><td class='rq'></td><td>總筆數</td></tr><tr><td><code>data[]</code></td><td class='ty'>array&lt;object&gt;</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>回 <code>CommonPageResp</code>，依 <code>attemptNumber</code>
+排序</li><li>無回答時 <code>data</code> 為空陣列，仍回 200</li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>NOT_FOUND</code></td><td class='st st4'>404</td><td><code>not_found</code></td><td class='rq'>否</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<h3 class="sec">4.8 M-12 參考答案（P2A）</h3>
+<div class="ep" id="ep-18">
+<h4 class="ephead"><span class="mth mPOST">POST</span><code class="path">/api/questions/{id}/reference-answer</code><span class="pill dual">同步／非同步</span></h4>
+<p class="epsum">生成參考答案（已存在則同步沿用，否則非同步生成，P2A）</p>
+<div class="epnotes"><p>已存在則直接
+<code>200 { status: "READY", reused: true, referenceAnswer }</code>，<strong>不重新呼叫模型</strong>（AC-12）。</p>
+<table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>text</code></td>
+<td>英文參考答案，<strong>最多 2000
+字元</strong>（含空格換行，§17.4）</td>
+</tr>
+<tr>
+<td><code>requiresUserFill</code></td>
+<td><code>true</code> 表示含
+placeholder，前端提示使用者自行補上個人經歷</td>
+</tr>
+<tr>
+<td><code>placeholders</code></td>
+<td>固定標記。<strong>AI
+不得編造使用者未提供的經歷、成果或指標</strong>（AC-14、§4.7.4）</td>
+</tr>
+<tr>
+<td><code>isEditable</code></td>
+<td>恆為 <code>false</code>。不可選取、複製或編輯（D-018、AC-12）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="part">Request</p>
+<pre><code>POST /api/questions/{id}/reference-answer
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略
+Idempotency-Key: {uuid v4}       # 建議帶，避免重整造成重複扣模型成本</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>id</code></td><td class='ty'>path</td><td class='rq'>必填</td><td class='ty'>string</td><td></td></tr><tr><td><code>Idempotency-Key</code></td><td class='ty'>header</td><td class='rq'></td><td class='ty'>string</td><td>UUID v4。相同 key 在 24 小時內重送會回傳第一次的結果，
+不會重複建立資源或重複扣模型成本（Spec §13.3）。
+</td></tr></table></div></div>
+<p class="part">Response — 這支有兩種成功回應</p>
+<p class="dualnote">同一個請求依情況回不同狀態碼，<b>前端要用 HTTP status 分流</b>：<code>200</code> 已存在，直接沿用；<code>202</code> 已接受，非同步處理中。請輪詢 GET /jobs/{jobId}。</p>
+<p class="part sub">HTTP 200 — 已存在，直接沿用</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "status": "READY",
+    "reused": true,
+    "referenceAnswer": {
+      "questionId": "…",
+      "source": "USER_REQUESTED",
+      "text": "…",
+      "outline": [
+        "…"
+      ],
+      "practiceTip": "…",
+      "requiresUserFill": true,
+      "placeholders": [
+        "(此處需引述個人經歷，請自行填入)"
+      ],
+      "isEditable": false,
+      "createdAt": "2026-09-10T02:11:07Z"
+    }
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.status</code></td><td class='ty'>enum</td><td class='rq'></td><td>值：<code>"READY"</code></td></tr><tr><td><code>data.reused</code></td><td class='ty'>enum</td><td class='rq'></td><td>值：<code>true</code></td></tr><tr><td><code>data.referenceAnswer</code></td><td class='ty'>object</td><td class='rq'></td><td></td></tr><tr><td><code>data.referenceAnswer.questionId</code></td><td class='ty'>string</td><td class='rq'></td><td>所屬題目 id</td></tr><tr><td><code>data.referenceAnswer.source</code></td><td class='ty'>enum</td><td class='rq'></td><td>這份參考答案的來源，僅供追溯：USER_REQUESTED = 使用者在練習頁主動點「生成參考答案」；FROM_ANALYSIS = 由 A01 分析輸出帶出。一題只會有一份參考答案，先產生的即為該題的參考答案，**前端不需要判斷此欄位**。　值：<code>"USER_REQUESTED"</code> / <code>"FROM_ANALYSIS"</code></td></tr><tr><td><code>data.referenceAnswer.text</code></td><td class='ty'>string</td><td class='rq'></td><td>英文參考答案，最多 2000 字元（含空格換行，Spec §17.4）</td></tr><tr><td><code>data.referenceAnswer.outline</code></td><td class='ty'>array&lt;string&gt;</td><td class='rq'></td><td>答題架構要點，依序顯示即可</td></tr><tr><td><code>data.referenceAnswer.practiceTip</code></td><td class='ty'>string</td><td class='rq'></td><td>一句練習提示</td></tr><tr><td><code>data.referenceAnswer.requiresUserFill</code></td><td class='ty'>boolean</td><td class='rq'></td><td>true 表示內容含 placeholder，前端應提示使用者自行補上個人經歷</td></tr><tr><td><code>data.referenceAnswer.placeholders</code></td><td class='ty'>array&lt;string&gt;</td><td class='rq'></td><td>固定標記。**AI 不得編造使用者未提供的經歷、成果或指標**
+（Spec AC-14、§4.7.4）。
+</td></tr><tr><td><code>data.referenceAnswer.isEditable</code></td><td class='ty'>enum</td><td class='rq'></td><td>恆為 false。參考答案不可選取、複製或編輯（Spec D-018、AC-12）。　值：<code>false</code></td></tr><tr><td><code>data.referenceAnswer.createdAt</code></td><td class='ty'>string<span class="fmt">/date-time</span></td><td class='rq'></td><td>生成時間（ISO 8601）</td></tr></table></div></div>
+<p class="part sub">HTTP 202 — 已接受，非同步處理中。請輪詢 GET /jobs/{jobId}</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "jobId": "job_01J8X2K4M7",
+    "status": "QUEUED",
+    "pollAfterMs": 1500
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.jobId</code></td><td class='ty'>string</td><td class='rq'>必填</td><td>非同步工作 id，用它去輪詢 GET /api/jobs/{jobId}</td></tr><tr><td><code>data.status</code></td><td class='ty'>enum</td><td class='rq'>必填</td><td>值：<code>"QUEUED"</code> / <code>"RUNNING"</code> / <code>"READY"</code> / <code>"FAILED"</code></td></tr><tr><td><code>data.pollAfterMs</code></td><td class='ty'>integer</td><td class='rq'></td><td>建議等待多久再發第一次輪詢，首次固定 1500</td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>尚未生成時回 202；輪詢到 READY 後 <code>referenceAnswer.text</code>
+不超過 2000 字元</li><li>已存在時回 <strong>200</strong> 且 <code>reused</code> 為
+true，<strong>不呼叫模型</strong>（AC-12）</li><li><code>isEditable</code> 恆為 false</li><li>含 placeholder 時 <code>requiresUserFill</code> 為 true 且
+<code>placeholders</code> 非空</li><li><strong>輸出不得出現使用者未提供的公司名、職稱、數字成果</strong>（AC-14）</li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>VALIDATION_ERROR</code></td><td class='st st4'>400</td><td><code>validation_error</code></td><td class='rq'>是</td></tr><tr><td><code>NOT_FOUND</code></td><td class='st st4'>404</td><td><code>not_found</code></td><td class='rq'>否</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+<p class="none">非同步 endpoint 的失敗也可能發生在 job 執行期間 —— 此時 <code>POST</code> 仍回 202，錯誤出現在 <code>GET /api/jobs/{jobId}</code> 的 <code>data.error</code>，欄位與上表相同。</p>
+</div>
+<div class="ep" id="ep-19">
+<h4 class="ephead"><span class="mth mGET">GET</span><code class="path">/api/questions/{id}/reference-answer</code><span class="pill sync">同步</span></h4>
+<p class="epsum">讀取已保存的參考答案（永不觸發生成）</p>
+<div class="epnotes"><p><strong>純讀取，永遠不觸發生成、不呼叫模型、不產生成本。</strong>
+對應「參考前次答案」。 <code>404 NOT_FOUND</code> = 尚未生成過。</p>
+<p><strong>同一題只會有一份參考答案。</strong> 已與 PM 對齊（見 issue
+#3）：不論它是使用者主動 點「生成參考答案」產生的，還是 A01 分析輸出
+<code>priorityImprovement.referenceAnswer</code>
+帶出來的，<strong>先產生的那份就是這一題的參考答案，之後不重新生成第二份</strong>。</p>
+<p><code>source</code>
+欄位仍保留，用來記錄它從哪裡來（供追溯與評估用），<strong>但不影響取用邏輯</strong>：</p>
+<table>
+<thead>
+<tr>
+<th><code>source</code></th>
+<th>代表</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>USER_REQUESTED</code></td>
+<td>使用者在練習頁主動點「生成參考答案」時產生</td>
+</tr>
+<tr>
+<td><code>FROM_ANALYSIS</code></td>
+<td>由 A01 分析輸出帶出</td>
+</tr>
+</tbody>
+</table>
+<p><strong>前端不需要判斷
+<code>source</code>，拿到什麼就顯示什麼。</strong> 資料表為
+<code>UNIQUE(question_id)</code> —— 一題一份，天然冪等。</p>
+<hr />
+</div>
+<p class="part">Request</p>
+<pre><code>GET /api/questions/{id}/reference-answer
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>id</code></td><td class='ty'>path</td><td class='rq'>必填</td><td class='ty'>string</td><td></td></tr></table></div></div>
+<p class="part">Response — HTTP 200</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "referenceAnswer": {
+      "questionId": "…",
+      "source": "USER_REQUESTED",
+      "text": "…",
+      "outline": [
+        "…"
+      ],
+      "practiceTip": "…",
+      "requiresUserFill": true,
+      "placeholders": [
+        "(此處需引述個人經歷，請自行填入)"
+      ],
+      "isEditable": false,
+      "createdAt": "2026-09-10T02:11:07Z"
+    }
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.referenceAnswer</code></td><td class='ty'>object</td><td class='rq'></td><td></td></tr><tr><td><code>data.referenceAnswer.questionId</code></td><td class='ty'>string</td><td class='rq'></td><td>所屬題目 id</td></tr><tr><td><code>data.referenceAnswer.source</code></td><td class='ty'>enum</td><td class='rq'></td><td>這份參考答案的來源，僅供追溯：USER_REQUESTED = 使用者在練習頁主動點「生成參考答案」；FROM_ANALYSIS = 由 A01 分析輸出帶出。一題只會有一份參考答案，先產生的即為該題的參考答案，**前端不需要判斷此欄位**。　值：<code>"USER_REQUESTED"</code> / <code>"FROM_ANALYSIS"</code></td></tr><tr><td><code>data.referenceAnswer.text</code></td><td class='ty'>string</td><td class='rq'></td><td>英文參考答案，最多 2000 字元（含空格換行，Spec §17.4）</td></tr><tr><td><code>data.referenceAnswer.outline</code></td><td class='ty'>array&lt;string&gt;</td><td class='rq'></td><td>答題架構要點，依序顯示即可</td></tr><tr><td><code>data.referenceAnswer.practiceTip</code></td><td class='ty'>string</td><td class='rq'></td><td>一句練習提示</td></tr><tr><td><code>data.referenceAnswer.requiresUserFill</code></td><td class='ty'>boolean</td><td class='rq'></td><td>true 表示內容含 placeholder，前端應提示使用者自行補上個人經歷</td></tr><tr><td><code>data.referenceAnswer.placeholders</code></td><td class='ty'>array&lt;string&gt;</td><td class='rq'></td><td>固定標記。**AI 不得編造使用者未提供的經歷、成果或指標**
+（Spec AC-14、§4.7.4）。
+</td></tr><tr><td><code>data.referenceAnswer.isEditable</code></td><td class='ty'>enum</td><td class='rq'></td><td>恆為 false。參考答案不可選取、複製或編輯（Spec D-018、AC-12）。　值：<code>false</code></td></tr><tr><td><code>data.referenceAnswer.createdAt</code></td><td class='ty'>string<span class="fmt">/date-time</span></td><td class='rq'></td><td>生成時間（ISO 8601）</td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li><strong>永不觸發生成、永不呼叫模型</strong>（可用 provider
+呼叫次數斷言）</li><li>一題只會有一份（<code>UNIQUE(question_id)</code>）——
+併發送兩次生成請求只會寫入一筆</li><li>已有參考答案時，A01 分析輸出的 referenceAnswer
+<strong>不覆蓋</strong>既有那筆</li><li>兩者皆無回 404 <code>NOT_FOUND</code></li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>NOT_FOUND</code></td><td class='st st4'>404</td><td><code>not_found</code></td><td class='rq'>否</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<h3 class="sec">4.9 M-11 / M-14 分析結果（P1B 首次 / P2A 比較）</h3>
+<div class="ep" id="ep-20">
+<h4 class="ephead"><span class="mth mPOST">POST</span><code class="path">/api/attempts/{id}/analysis</code><span class="pill dual">同步／非同步</span></h4>
+<p class="epsum">執行分析（已分析過則同步沿用，否則非同步生成，約 20-45 秒）</p>
+<div class="epnotes"><blockquote>
+<p><strong>前端不需指定首次或比較。</strong>
+後端自行判斷：該題已有其他已完成分析 →
+<code>COMPARISON</code>（A02）；否則 → <code>FIRST</code>（A01）。</p>
+</blockquote>
+<blockquote>
+<p><strong>同一個 attempt 已分析過則直接回
+<code>200 { status: "READY", reused: true, analysis }</code>，不重新呼叫模型。</strong>
+<code>analyses</code> 表以 <code>UNIQUE(attempt_id)</code>
+保證同一次回答只會有一筆分析（Spec §13.3）。
+重整頁面或重複點「開始分析」都不會多花一次模型成本。</p>
+</blockquote>
+<p><strong>首次分析</strong></p>
+<p><strong>第二次分析</strong>：<code>analysisType: "COMPARISON"</code>，<code>comparison</code>
+有值， 且 <code>priorityImprovement</code> <strong>沒有
+<code>referenceAnswer</code></strong>（§17.2：第二輪讓使用者用自己的話持續練習）。</p>
+</div>
+<p class="part">Request</p>
+<pre><code>POST /api/attempts/{id}/analysis
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略
+Idempotency-Key: {uuid v4}       # 建議帶，避免重整造成重複扣模型成本</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>id</code></td><td class='ty'>path</td><td class='rq'>必填</td><td class='ty'>string</td><td></td></tr><tr><td><code>Idempotency-Key</code></td><td class='ty'>header</td><td class='rq'></td><td class='ty'>string</td><td>UUID v4。相同 key 在 24 小時內重送會回傳第一次的結果，
+不會重複建立資源或重複扣模型成本（Spec §13.3）。
+</td></tr></table></div></div>
+<p class="part">Response — 這支有兩種成功回應</p>
+<p class="dualnote">同一個請求依情況回不同狀態碼，<b>前端要用 HTTP status 分流</b>：<code>200</code> 此 attempt 已分析過，直接沿用；<code>202</code> 已接受，非同步處理中。請輪詢 GET /jobs/{jobId}。</p>
+<p class="part sub">HTTP 200 — 此 attempt 已分析過，直接沿用</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "status": "READY",
+    "reused": true,
+    "analysis": {
+      "id": "ana_01J8X2K4M7",
+      "attemptId": "…",
+      "analysisType": "FIRST",
+      "overallState": "STRONG",
+      "fits": {
+        "jdFit": {
+          "state": "GREEN",
+          "evidence": "…",
+          "reason": "…",
+          "signal": "…"
+        },
+        "answerFit": {
+          "state": "GREEN",
+          "evidence": "…",
+          "reason": "…",
+          "signal": "…"
+        },
+        "deliveryFit": {
+          "state": "GREEN",
+          "evidence": "…",
+          "reason": "…",
+          "signal": "…"
+        }
+      },
+      "priorityImprovement": {
+        "title": "…",
+        "summary": "…",
+        "userAnswerEvidence": "…",
+        "whyItMatters": "…",
+        "nextInstructionTitle": "…",
+        "nextInstructionDetail": "…",
+        "exampleSentence": "…",
+        "referenceAnswer": null
+      },
+      "comparison": {
+        "previousAttemptId": "…",
+        "improved": [
+          {
+            "area": "…",
+            "explanation": "…",
+            "before": "…",
+            "after": "…"
+          }
+        ],
+        "notYetImproved": [
+          "…"
+        ]
+      },
+      "createdAt": "2026-09-10T02:11:07Z"
+    }
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.status</code></td><td class='ty'>enum</td><td class='rq'></td><td>固定 READY —— 既有分析必然已完成　值：<code>"READY"</code></td></tr><tr><td><code>data.reused</code></td><td class='ty'>enum</td><td class='rq'></td><td>固定 true，代表這次沒有呼叫模型　值：<code>true</code></td></tr><tr><td><code>data.analysis</code></td><td class='ty'>object</td><td class='rq'></td><td></td></tr><tr><td><code>data.analysis.id</code></td><td class='ty'>string</td><td class='rq'></td><td>分析結果 id</td></tr><tr><td><code>data.analysis.attemptId</code></td><td class='ty'>string</td><td class='rq'></td><td>被分析的回答 id</td></tr><tr><td><code>data.analysis.analysisType</code></td><td class='ty'>enum</td><td class='rq'></td><td>值：<code>"FIRST"</code> / <code>"COMPARISON"</code></td></tr><tr><td><code>data.analysis.overallState</code></td><td class='ty'>enum</td><td class='rq'></td><td>值：<code>"STRONG"</code> / <code>"ACCEPTABLE"</code> / <code>"NEEDS_IMPROVEMENT"</code></td></tr><tr><td><code>data.analysis.fits</code></td><td class='ty'>object</td><td class='rq'></td><td>三個面向的評估：jdFit 職缺契合度 / answerFit 答案契合度 / deliveryFit 表達契合度。只回 GREEN / YELLOW / RED 三級，不回數字分數（Spec D-025）。deliveryFit 本輪只評文字與文法（詞彙、句構、用字準確度、清晰度），不評發音、腔調、語調、音量、語速、停頓、填充詞 —— 見 PRD 3-Fit.pdf 與 spec.md §4.9。</td></tr><tr><td><code>data.analysis.fits.jdFit</code></td><td class='ty'>object</td><td class='rq'></td><td>職缺契合度。輸入為 JD + 履歷 + **這一題** + **這次的回答**，
+因此同一份 JD 下不同題目／不同回答會得到不同結果。
+</td></tr><tr><td><code>data.analysis.fits.answerFit</code></td><td class='ty'>object</td><td class='rq'></td><td>答案契合度。是否真的回答了問題，有情境、行動與結果。</td></tr><tr><td><code>data.analysis.fits.deliveryFit</code></td><td class='ty'>object</td><td class='rq'></td><td>表達契合度。**只評英文詞彙、文法、句構與清晰度。**
+不評估發音、腔調、語速、停頓、填充詞或自信度
+（Spec §5.3 明列為 Out of Scope；模型只拿到逐字稿）。
+</td></tr><tr><td><code>data.analysis.priorityImprovement</code></td><td class='ty'>object</td><td class='rq'></td><td>**只回一項最優先改善**（Spec AC-06）。
+`reference_answer` 只出現在 FIRST 分析；COMPARISON 分析不提供
+（Spec §17.2：第二輪應讓使用者用自己的話持續練習）。
+</td></tr><tr><td><code>data.analysis.priorityImprovement.title</code></td><td class='ty'>string</td><td class='rq'></td><td>繁體中文標題</td></tr><tr><td><code>data.analysis.priorityImprovement.summary</code></td><td class='ty'>string</td><td class='rq'></td><td>繁體中文一句話</td></tr><tr><td><code>data.analysis.priorityImprovement.userAnswerEvidence</code></td><td class='ty'>string</td><td class='rq'></td><td>引用本次回答中與此建議相關的英文原文</td></tr><tr><td><code>data.analysis.priorityImprovement.whyItMatters</code></td><td class='ty'>string</td><td class='rq'></td><td>繁體中文</td></tr><tr><td><code>data.analysis.priorityImprovement.nextInstructionTitle</code></td><td class='ty'>string</td><td class='rq'></td><td>繁體中文祈使句</td></tr><tr><td><code>data.analysis.priorityImprovement.nextInstructionDetail</code></td><td class='ty'>string</td><td class='rq'></td><td>繁體中文</td></tr><tr><td><code>data.analysis.priorityImprovement.exampleSentence</code></td><td class='ty'>string</td><td class='rq'></td><td>英文句型。需要個人經歷處使用固定 placeholder。</td></tr><tr><td><code>data.analysis.priorityImprovement.referenceAnswer</code></td><td class='ty'>string?</td><td class='rq'></td><td>僅 FIRST 分析提供</td></tr><tr><td><code>data.analysis.comparison</code></td><td class='ty'>object?</td><td class='rq'></td><td></td></tr><tr><td><code>data.analysis.createdAt</code></td><td class='ty'>string<span class="fmt">/date-time</span></td><td class='rq'></td><td>分析完成時間（ISO 8601）</td></tr></table></div></div>
+<p class="part sub">HTTP 202 — 已接受，非同步處理中。請輪詢 GET /jobs/{jobId}</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "jobId": "job_01J8X2K4M7",
+    "status": "QUEUED",
+    "pollAfterMs": 1500
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.jobId</code></td><td class='ty'>string</td><td class='rq'>必填</td><td>非同步工作 id，用它去輪詢 GET /api/jobs/{jobId}</td></tr><tr><td><code>data.status</code></td><td class='ty'>enum</td><td class='rq'>必填</td><td>值：<code>"QUEUED"</code> / <code>"RUNNING"</code> / <code>"READY"</code> / <code>"FAILED"</code></td></tr><tr><td><code>data.pollAfterMs</code></td><td class='ty'>integer</td><td class='rq'></td><td>建議等待多久再發第一次輪詢，首次固定 1500</td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>首次分析回 202；輪詢到 READY 後 <code>analysisType</code> 為
+<code>FIRST</code>、<code>comparison</code> 為 null</li><li>該題已有其他完成分析時，<code>analysisType</code> 為
+<code>COMPARISON</code> 且 <code>comparison</code> 有值</li><li><strong>同一個 attempt 重複 POST 回 200 且 <code>reused</code> 為
+true，模型只被呼叫一次</strong>（UNIQUE(attempt_id)）</li><li><code>fits</code> 三項皆只回 <code>GREEN</code> / <code>YELLOW</code>
+/
+<code>RED</code>，<strong>回應中不得出現任何數字分數</strong>（D-025）</li><li><code>comparison.improved</code> 可為空陣列，且不編造進步</li><li>COMPARISON 的 <code>priorityImprovement</code> <strong>不含</strong>
+<code>referenceAnswer</code></li><li><code>deliveryFit</code>
+的文字不得提及發音、腔調、語速、停頓、填充詞、自信度</li><li>分析失敗時 job FAILED、<code>error.code</code> 為
+<code>ANALYSIS_UNAVAILABLE</code>，且<strong>不覆蓋既有的成功結果</strong>（AC-09）</li><li>attempt 沒有內容時回 400 <code>EMPTY_ANSWER</code></li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>ANALYSIS_UNAVAILABLE</code></td><td class='st st5'>502</td><td><code>analysis_retry</code></td><td class='rq'>是</td></tr><tr><td><code>EMPTY_ANSWER</code></td><td class='st st4'>400</td><td><code>answer_empty</code></td><td class='rq'>是</td></tr><tr><td><code>VALIDATION_ERROR</code></td><td class='st st4'>400</td><td><code>validation_error</code></td><td class='rq'>是</td></tr><tr><td><code>NOT_FOUND</code></td><td class='st st4'>404</td><td><code>not_found</code></td><td class='rq'>否</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+<p class="none">非同步 endpoint 的失敗也可能發生在 job 執行期間 —— 此時 <code>POST</code> 仍回 202，錯誤出現在 <code>GET /api/jobs/{jobId}</code> 的 <code>data.error</code>，欄位與上表相同。</p>
+</div>
+<p>權威定義在 PRD
+<strong><code>3-Fit.pdf</code></strong>。三者的互斥判準（同一個待改善問題只能歸入一個
+Fit）：</p>
+<ul>
+<li>改變 <strong>JD</strong>、題目與回答不變，問題的重要性會變 →
+<strong>JD Fit</strong></li>
+<li>改變 <strong>題目</strong>、JD 與回答不變，問題會消失 →
+<strong>Answer Fit</strong></li>
+<li>內容不變、只是<strong>重新表達</strong>得更清楚，問題就消失 →
+<strong>Delivery Fit</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Fit</th>
+<th>輸入</th>
+<th>判斷什麼</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>jdFit</strong> 職缺契合度</td>
+<td>JD + 履歷 + <strong>這一題</strong> + <strong>這次回答</strong></td>
+<td>這次的回答有沒有打中這個職缺要的能力。<strong>因為輸入含題目與回答，所以同一份
+JD 下不同題目／不同回答會得到不同結果</strong></td>
+</tr>
+<tr>
+<td><strong>answerFit</strong> 答案契合度</td>
+<td>題目 + 回答</td>
+<td>有沒有真的回答問題，是否有情境、行動與結果</td>
+</tr>
+<tr>
+<td><strong>deliveryFit</strong> 表達契合度</td>
+<td><strong>回答文字（語音則為逐字稿）</strong></td>
+<td><strong>本輪只評文字與文法</strong> ——
+詞彙、句構、用字準確度、清晰度</td>
+</tr>
+</tbody>
+</table>
+<h4 id="warning-delivery-fit-本輪範圍是刻意收窄的不要修正回去">⚠️
+Delivery Fit 本輪範圍是刻意收窄的，不要「修正」回去</h4>
+<p><code>3-Fit.pdf</code> §3 定義了 <strong>五個構面</strong>：3.1
+清晰度、3.2 流暢度、3.3 精煉度、 3.4 連貫性與口語組織、3.5
+語言有效性。</p>
+<p><strong>本輪（MVP）只實作 3.1 與 3.5</strong>，即「文字與文法」。
+已與 PM 對齊（2026-09-05）：Delivery Fit
+目前只針對語音轉成文字後的<strong>文字與文法</strong>判斷。</p>
+<p>因此 prompt
+必須明文禁止提及：<strong>發音、腔調、語調、音量、語速、停頓、填充詞、自信度</strong>。</p>
+<blockquote>
+<p>讀 PRD 的人會發現 §3.2 流暢度明列 filler words 與 long unnatural
+pauses，
+與上述禁令看似衝突。<strong>那是本輪範圍外的構面，不是本文件寫錯。</strong>
+技術上這些其實判斷得出來（whisper 會照實轉出 "um"、"I, I think"；
+停頓可由 <code>attempt_transcript_segments</code> 的
+<code>startMs</code>／<code>endMs</code> 間隔推得），
+保留為之後擴充。真正<strong>永遠做不到</strong>的是發音、腔調、語調、音量
+—— 那需要音檔本身。</p>
+</blockquote>
+<blockquote>
+<p><strong>P1B 文字模式同樣評 Delivery Fit。</strong>
+打字的回答沒有口說痕跡，但詞彙、句構、 清晰度一樣適用，所以三個 Fit
+在文字與語音模式下都會回傳。</p>
+</blockquote>
+<blockquote>
+<p><strong><code>comparison.improved</code> 可能是空陣列。</strong>
+第二次回答沒有真的改善時，模型不會編造進步。
+前端要能處理空陣列，顯示「這次沒有明顯改善」而不是壞掉。</p>
+</blockquote>
+
+<div class="ep" id="ep-21">
+<h4 class="ephead"><span class="mth mGET">GET</span><code class="path">/api/attempts/{id}/analysis</code><span class="pill sync">同步</span></h4>
+<p class="epsum">取得分析結果</p>
+<div class="epnotes"><hr />
+</div>
+<p class="part">Request</p>
+<pre><code>GET /api/attempts/{id}/analysis
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略</code></pre>
+<div class="fieldtable"><p class="tcap">參數</p><div class="scroll-x"><table><tr><th style="width:20%">參數</th><th style="width:12%">位置</th><th style="width:9%">必要</th><th style="width:13%">型別</th><th>說明</th></tr><tr><td><code>id</code></td><td class='ty'>path</td><td class='rq'>必填</td><td class='ty'>string</td><td></td></tr></table></div></div>
+<p class="part">Response — HTTP 200</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "analysis": {
+      "id": "ana_01J8X2K4M7",
+      "attemptId": "…",
+      "analysisType": "FIRST",
+      "overallState": "STRONG",
+      "fits": {
+        "jdFit": {
+          "state": "GREEN",
+          "evidence": "…",
+          "reason": "…",
+          "signal": "…"
+        },
+        "answerFit": {
+          "state": "GREEN",
+          "evidence": "…",
+          "reason": "…",
+          "signal": "…"
+        },
+        "deliveryFit": {
+          "state": "GREEN",
+          "evidence": "…",
+          "reason": "…",
+          "signal": "…"
+        }
+      },
+      "priorityImprovement": {
+        "title": "…",
+        "summary": "…",
+        "userAnswerEvidence": "…",
+        "whyItMatters": "…",
+        "nextInstructionTitle": "…",
+        "nextInstructionDetail": "…",
+        "exampleSentence": "…",
+        "referenceAnswer": null
+      },
+      "comparison": {
+        "previousAttemptId": "…",
+        "improved": [
+          {
+            "area": "…",
+            "explanation": "…",
+            "before": "…",
+            "after": "…"
+          }
+        ],
+        "notYetImproved": [
+          "…"
+        ]
+      },
+      "createdAt": "2026-09-10T02:11:07Z"
+    }
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.analysis</code></td><td class='ty'>object</td><td class='rq'></td><td></td></tr><tr><td><code>data.analysis.id</code></td><td class='ty'>string</td><td class='rq'></td><td>分析結果 id</td></tr><tr><td><code>data.analysis.attemptId</code></td><td class='ty'>string</td><td class='rq'></td><td>被分析的回答 id</td></tr><tr><td><code>data.analysis.analysisType</code></td><td class='ty'>enum</td><td class='rq'></td><td>值：<code>"FIRST"</code> / <code>"COMPARISON"</code></td></tr><tr><td><code>data.analysis.overallState</code></td><td class='ty'>enum</td><td class='rq'></td><td>值：<code>"STRONG"</code> / <code>"ACCEPTABLE"</code> / <code>"NEEDS_IMPROVEMENT"</code></td></tr><tr><td><code>data.analysis.fits</code></td><td class='ty'>object</td><td class='rq'></td><td>三個面向的評估：jdFit 職缺契合度 / answerFit 答案契合度 / deliveryFit 表達契合度。只回 GREEN / YELLOW / RED 三級，不回數字分數（Spec D-025）。deliveryFit 本輪只評文字與文法（詞彙、句構、用字準確度、清晰度），不評發音、腔調、語調、音量、語速、停頓、填充詞 —— 見 PRD 3-Fit.pdf 與 spec.md §4.9。</td></tr><tr><td><code>data.analysis.fits.jdFit</code></td><td class='ty'>object</td><td class='rq'></td><td>職缺契合度。輸入為 JD + 履歷 + **這一題** + **這次的回答**，
+因此同一份 JD 下不同題目／不同回答會得到不同結果。
+</td></tr><tr><td><code>data.analysis.fits.answerFit</code></td><td class='ty'>object</td><td class='rq'></td><td>答案契合度。是否真的回答了問題，有情境、行動與結果。</td></tr><tr><td><code>data.analysis.fits.deliveryFit</code></td><td class='ty'>object</td><td class='rq'></td><td>表達契合度。**只評英文詞彙、文法、句構與清晰度。**
+不評估發音、腔調、語速、停頓、填充詞或自信度
+（Spec §5.3 明列為 Out of Scope；模型只拿到逐字稿）。
+</td></tr><tr><td><code>data.analysis.priorityImprovement</code></td><td class='ty'>object</td><td class='rq'></td><td>**只回一項最優先改善**（Spec AC-06）。
+`reference_answer` 只出現在 FIRST 分析；COMPARISON 分析不提供
+（Spec §17.2：第二輪應讓使用者用自己的話持續練習）。
+</td></tr><tr><td><code>data.analysis.priorityImprovement.title</code></td><td class='ty'>string</td><td class='rq'></td><td>繁體中文標題</td></tr><tr><td><code>data.analysis.priorityImprovement.summary</code></td><td class='ty'>string</td><td class='rq'></td><td>繁體中文一句話</td></tr><tr><td><code>data.analysis.priorityImprovement.userAnswerEvidence</code></td><td class='ty'>string</td><td class='rq'></td><td>引用本次回答中與此建議相關的英文原文</td></tr><tr><td><code>data.analysis.priorityImprovement.whyItMatters</code></td><td class='ty'>string</td><td class='rq'></td><td>繁體中文</td></tr><tr><td><code>data.analysis.priorityImprovement.nextInstructionTitle</code></td><td class='ty'>string</td><td class='rq'></td><td>繁體中文祈使句</td></tr><tr><td><code>data.analysis.priorityImprovement.nextInstructionDetail</code></td><td class='ty'>string</td><td class='rq'></td><td>繁體中文</td></tr><tr><td><code>data.analysis.priorityImprovement.exampleSentence</code></td><td class='ty'>string</td><td class='rq'></td><td>英文句型。需要個人經歷處使用固定 placeholder。</td></tr><tr><td><code>data.analysis.priorityImprovement.referenceAnswer</code></td><td class='ty'>string?</td><td class='rq'></td><td>僅 FIRST 分析提供</td></tr><tr><td><code>data.analysis.comparison</code></td><td class='ty'>object?</td><td class='rq'></td><td></td></tr><tr><td><code>data.analysis.createdAt</code></td><td class='ty'>string<span class="fmt">/date-time</span></td><td class='rq'></td><td>分析完成時間（ISO 8601）</td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>尚未分析回 404 <code>NOT_FOUND</code></li><li>回應中不得出現任何數字 Fit 分數</li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>ANALYSIS_UNAVAILABLE</code></td><td class='st st5'>502</td><td><code>analysis_retry</code></td><td class='rq'>是</td></tr><tr><td><code>NOT_FOUND</code></td><td class='st st4'>404</td><td><code>not_found</code></td><td class='rq'>否</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<h3 class="sec">4.10 M-17 / S-01 登入（P2C / P3）</h3>
+<div class="ep" id="ep-22">
+<h4 class="ephead"><span class="mth mPOST">POST</span><code class="path">/api/auth/email/request</code><span class="pill sync">同步</span></h4>
+<p class="epsum">寄送 Email 驗證信（P2C）</p>
+<div class="epnotes"><p>寄出 Email 驗證信。<code>expiresIn</code> 為 900 秒。 資料表只保存
+token 的 SHA-256 雜湊，<strong>明文只存在於信件中</strong>。</p>
+</div>
+<p class="part">Request</p>
+<pre><code>POST /api/auth/email/request
+Content-Type: application/json
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略
+Idempotency-Key: {uuid v4}       # 建議帶，避免重整造成重複扣模型成本</code></pre>
+<p class="tcap">Request body</p><pre><code>{
+  "email": "you@example.com"
+}</code></pre>
+<div class="fieldtable"><p class="tcap">Request 欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>email</code></td><td class='ty'>string<span class="fmt">/email</span></td><td class='rq'>必填</td><td></td></tr></table></div></div>
+<p class="part">Response — HTTP 200</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "status": "sent",
+    "email": "user@example.com",
+    "expiresIn": 900
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.status</code></td><td class='ty'>enum</td><td class='rq'></td><td>值：<code>"sent"</code></td></tr><tr><td><code>data.email</code></td><td class='ty'>string<span class="fmt">/email</span></td><td class='rq'></td><td></td></tr><tr><td><code>data.expiresIn</code></td><td class='ty'>integer</td><td class='rq'></td><td>驗證連結有效秒數</td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>合法 email 回 200，<code>expiresIn</code> 為 900</li><li>資料庫只存 token 的 SHA-256，<strong>不存明文</strong></li><li>同一 email 短時間內重複請求受速率限制，超過回 429
+<code>RATE_LIMITED</code></li><li>email 不存在時回應與存在時相同（不洩漏帳號是否註冊）</li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>RATE_LIMITED</code></td><td class='st st4'>429</td><td><code>rate_limited</code></td><td class='rq'>是</td></tr><tr><td><code>VALIDATION_ERROR</code></td><td class='st st4'>400</td><td><code>validation_error</code></td><td class='rq'>是</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<div class="ep" id="ep-23">
+<h4 class="ephead"><span class="mth mPOST">POST</span><code class="path">/api/auth/email/verify</code><span class="pill sync">同步</span></h4>
+<p class="epsum">驗證 Email token 並換取 access token（P2C）</p>
+<div class="epnotes"><p>以信件中的 token 換取 <code>accessToken</code>。token
+為<strong>一次性</strong>，使用後寫入 <code>consumed_at</code>。</p>
+</div>
+<p class="part">Request</p>
+<pre><code>POST /api/auth/email/verify
+Content-Type: application/json
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略
+Idempotency-Key: {uuid v4}       # 建議帶，避免重整造成重複扣模型成本</code></pre>
+<p class="tcap">Request body</p><pre><code>{
+  "token": "…"
+}</code></pre>
+<div class="fieldtable"><p class="tcap">Request 欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>token</code></td><td class='ty'>string</td><td class='rq'>必填</td><td>驗證信連結帶的 token</td></tr></table></div></div>
+<p class="part">Response — HTTP 200</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "accessToken": "…",
+    "tokenType": "Bearer",
+    "expiresIn": 2592000,
+    "user": {
+      "id": "usr_01J8X2K4M7",
+      "email": "user@example.com",
+      "displayName": "…",
+      "avatarLetter": "…"
+    }
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.accessToken</code></td><td class='ty'>string</td><td class='rq'></td><td>存取權杖，後續請求放在 Authorization: Bearer {token}。採 opaque 隨機字串（非 JWT），伺服器端只保存 SHA-256 雜湊；登出後即失效。</td></tr><tr><td><code>data.tokenType</code></td><td class='ty'>enum</td><td class='rq'></td><td>固定 Bearer。與 token 內容格式無關，僅為 header 慣例。　值：<code>"Bearer"</code></td></tr><tr><td><code>data.expiresIn</code></td><td class='ty'>integer</td><td class='rq'></td><td>權杖有效秒數</td></tr><tr><td><code>data.user</code></td><td class='ty'>object</td><td class='rq'></td><td></td></tr><tr><td><code>data.user.id</code></td><td class='ty'>string</td><td class='rq'></td><td>使用者 id</td></tr><tr><td><code>data.user.email</code></td><td class='ty'>string<span class="fmt">/email</span></td><td class='rq'></td><td>註冊信箱</td></tr><tr><td><code>data.user.displayName</code></td><td class='ty'>string</td><td class='rq'></td><td>顯示名稱；未設定為 null</td></tr><tr><td><code>data.user.avatarLetter</code></td><td class='ty'>string</td><td class='rq'></td><td>Header 頭像顯示的第一個字（Spec 4.6.4.8）</td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>有效且未使用的 token 回 200 與 <code>accessToken</code></li><li>同一 token 第二次使用回 410 <code>AUTH_TOKEN_EXPIRED</code></li><li>逾期 token 回 410 <code>AUTH_TOKEN_EXPIRED</code></li><li>驗證成功後 <code>consumed_at</code> 被寫入</li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>AUTH_TOKEN_EXPIRED</code></td><td class='st st4'>410</td><td><code>auth_token_expired</code></td><td class='rq'>是</td></tr><tr><td><code>VALIDATION_ERROR</code></td><td class='st st4'>400</td><td><code>validation_error</code></td><td class='rq'>是</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<div class="ep" id="ep-24">
+<h4 class="ephead"><span class="mth mPOST">POST</span><code class="path">/api/auth/google</code><span class="pill sync">同步</span></h4>
+<p class="epsum">Google OAuth 登入（P3）</p>
+<div class="epnotes"><p>Google OAuth 登入。首次登入建立 user，之後沿用同一個 user id。</p>
+</div>
+<p class="part">Request</p>
+<pre><code>POST /api/auth/google
+Content-Type: application/json
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略
+Idempotency-Key: {uuid v4}       # 建議帶，避免重整造成重複扣模型成本</code></pre>
+<p class="tcap">Request body</p><pre><code>{
+  "idToken": "…"
+}</code></pre>
+<div class="fieldtable"><p class="tcap">Request 欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>idToken</code></td><td class='ty'>string</td><td class='rq'>必填</td><td></td></tr></table></div></div>
+<p class="part">Response — HTTP 200</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "accessToken": "…",
+    "tokenType": "Bearer",
+    "expiresIn": 2592000,
+    "user": {
+      "id": "usr_01J8X2K4M7",
+      "email": "user@example.com",
+      "displayName": "…",
+      "avatarLetter": "…"
+    }
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.accessToken</code></td><td class='ty'>string</td><td class='rq'></td><td>存取權杖，後續請求放在 Authorization: Bearer {token}。採 opaque 隨機字串（非 JWT），伺服器端只保存 SHA-256 雜湊；登出後即失效。</td></tr><tr><td><code>data.tokenType</code></td><td class='ty'>enum</td><td class='rq'></td><td>固定 Bearer。與 token 內容格式無關，僅為 header 慣例。　值：<code>"Bearer"</code></td></tr><tr><td><code>data.expiresIn</code></td><td class='ty'>integer</td><td class='rq'></td><td>權杖有效秒數</td></tr><tr><td><code>data.user</code></td><td class='ty'>object</td><td class='rq'></td><td></td></tr><tr><td><code>data.user.id</code></td><td class='ty'>string</td><td class='rq'></td><td>使用者 id</td></tr><tr><td><code>data.user.email</code></td><td class='ty'>string<span class="fmt">/email</span></td><td class='rq'></td><td>註冊信箱</td></tr><tr><td><code>data.user.displayName</code></td><td class='ty'>string</td><td class='rq'></td><td>顯示名稱；未設定為 null</td></tr><tr><td><code>data.user.avatarLetter</code></td><td class='ty'>string</td><td class='rq'></td><td>Header 頭像顯示的第一個字（Spec 4.6.4.8）</td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>有效 id token 回 200 與 <code>accessToken</code></li><li>首次登入建立 user，再次登入沿用同一個 user id</li><li>無效 id token 回 401 <code>ACCESS_DENIED</code></li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>VALIDATION_ERROR</code></td><td class='st st4'>400</td><td><code>validation_error</code></td><td class='rq'>是</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<div class="ep" id="ep-25">
+<h4 class="ephead"><span class="mth mGET">GET</span><code class="path">/api/me</code><span class="pill sync">同步</span></h4>
+<p class="epsum">目前使用者與首頁導向資訊</p>
+<div class="epnotes"><p>取得目前使用者與首頁導向資訊。</p>
+<blockquote>
+<p><code>hasMockset = false</code> → 導向 4.1
+建立面試資料；<code>true</code> → 導向 4.2
+選擇題型（4.0.4.4、M-17）。</p>
+</blockquote>
+</div>
+<p class="part">Request</p>
+<pre><code>GET /api/me
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略</code></pre>
+<p class="none">無參數、無 request body。</p>
+<p class="part">Response — HTTP 200</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "user": {
+      "id": "usr_01J8X2K4M7",
+      "email": "user@example.com",
+      "displayName": "…",
+      "avatarLetter": "…"
+    },
+    "hasMockset": true,
+    "defaultMocksetId": null
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.user</code></td><td class='ty'>object</td><td class='rq'></td><td></td></tr><tr><td><code>data.user.id</code></td><td class='ty'>string</td><td class='rq'></td><td>使用者 id</td></tr><tr><td><code>data.user.email</code></td><td class='ty'>string<span class="fmt">/email</span></td><td class='rq'></td><td>註冊信箱</td></tr><tr><td><code>data.user.displayName</code></td><td class='ty'>string</td><td class='rq'></td><td>顯示名稱；未設定為 null</td></tr><tr><td><code>data.user.avatarLetter</code></td><td class='ty'>string</td><td class='rq'></td><td>Header 頭像顯示的第一個字（Spec 4.6.4.8）</td></tr><tr><td><code>data.hasMockset</code></td><td class='ty'>boolean</td><td class='rq'></td><td></td></tr><tr><td><code>data.defaultMocksetId</code></td><td class='ty'>string?</td><td class='rq'></td><td></td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>已建立過 Mock Set 時 <code>hasMockset</code> 為 true 且
+<code>defaultMocksetId</code> 有值</li><li>未建立過時 <code>hasMockset</code> 為
+false、<code>defaultMocksetId</code> 為 null</li><li>缺少或無效 token 回 401 <code>ACCESS_DENIED</code></li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<div class="ep" id="ep-26">
+<h4 class="ephead"><span class="mth mPOST">POST</span><code class="path">/api/auth/logout</code><span class="pill sync">同步</span></h4>
+<p class="epsum">登出（P2C）</p>
+<div class="epnotes"><p>登出，回 <code>204</code>。</p>
+<hr />
+</div>
+<p class="part">Request</p>
+<pre><code>POST /api/auth/logout
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略
+Idempotency-Key: {uuid v4}       # 建議帶，避免重整造成重複扣模型成本</code></pre>
+<p class="none">無參數、無 request body。</p>
+<p class="part">Response — HTTP 204</p>
+<p class="none">無回應內容（204 No Content）。</p>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>回 204，無 body</li><li>登出後原 token 呼叫需認證的 endpoint 回 401
+<code>ACCESS_DENIED</code></li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>VALIDATION_ERROR</code></td><td class='st st4'>400</td><td><code>validation_error</code></td><td class='rq'>是</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+</div>
+<h3 class="sec">4.11 S-04 事件紀錄（P3）</h3>
+<div class="ep" id="ep-27">
+<h4 class="ephead"><span class="mth mPOST">POST</span><code class="path">/api/events</code><span class="pill async">非同步</span></h4>
+<p class="epsum">前端埋點</p>
+<div class="epnotes"><blockquote>
+<p>⚠️ <strong><code>metadata</code>
+不得包含履歷內容、回答全文、逐字稿或任何個人資料</strong>（§13.1）。
+超過 2 KB 會回 <code>VALIDATION_ERROR</code>。事件名見產品 Spec §15.1 的
+28 個定義。</p>
+</blockquote>
+<hr />
+</div>
+<p class="part">Request</p>
+<pre><code>POST /api/events
+Content-Type: application/json
+Authorization: Bearer {token}        # P2C 起必填，之前後端忽略
+Idempotency-Key: {uuid v4}       # 建議帶，避免重整造成重複扣模型成本</code></pre>
+<p class="tcap">Request body</p><pre><code>{
+  "events": [
+    {
+      "name": "question_selected",
+      "occurredAt": "2026-09-10T02:11:07Z",
+      "mocksetId": null,
+      "questionId": null,
+      "attemptId": null,
+      "status": null,
+      "errorCode": null,
+      "latencyMs": 0,
+      "metadata": {}
+    }
+  ]
+}</code></pre>
+<div class="fieldtable"><p class="tcap">Request 欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>events</code></td><td class='ty'>array&lt;ProductEvent&gt;</td><td class='rq'>必填</td><td></td></tr><tr><td><code>events[].name</code></td><td class='ty'>string</td><td class='rq'>必填</td><td>Spec §15.1 定義的事件名</td></tr><tr><td><code>events[].occurredAt</code></td><td class='ty'>string<span class="fmt">/date-time</span></td><td class='rq'>必填</td><td>事件發生時間（ISO 8601），由前端填</td></tr><tr><td><code>events[].mocksetId</code></td><td class='ty'>string?</td><td class='rq'></td><td>相關 Mock Set id；無關聯時省略</td></tr><tr><td><code>events[].questionId</code></td><td class='ty'>string?</td><td class='rq'></td><td>相關題目 id；無關聯時省略</td></tr><tr><td><code>events[].attemptId</code></td><td class='ty'>string?</td><td class='rq'></td><td>相關回答 id；無關聯時省略</td></tr><tr><td><code>events[].status</code></td><td class='ty'>string?</td><td class='rq'></td><td>事件結果，例如 success / failure</td></tr><tr><td><code>events[].errorCode</code></td><td class='ty'>string?</td><td class='rq'></td><td>失敗時的錯誤碼，對應 RespErrCode</td></tr><tr><td><code>events[].latencyMs</code></td><td class='ty'>integer?</td><td class='rq'></td><td>此事件耗時毫秒數</td></tr><tr><td><code>events[].metadata</code></td><td class='ty'>object</td><td class='rq'></td><td>**不得包含履歷內容、回答全文、逐字稿或任何個人資料**（Spec §13.1）。
+超過 2 KB 會被拒絕。
+</td></tr></table></div></div>
+<p class="part">Response — HTTP 202</p>
+<p class="tcap">完整回應（含外層包裝）</p><pre><code>{
+  "timestamp": 1788289513681,
+  "data": {
+    "accepted": 1
+  }
+}</code></pre>
+<div class="fieldtable"><p class="tcap">回應欄位說明</p><div class="scroll-x"><table><tr><th style="width:26%">欄位</th><th style="width:15%">型別</th><th style="width:8%">必要</th><th>說明</th></tr><tr><td><code>timestamp</code></td><td class='ty'>integer</td><td class='rq'>必填</td><td>後端產生此回應的 epoch millis</td></tr><tr><td><code>data</code></td><td class='ty'>object</td><td class='rq'>必填</td><td>以下為 data 的內容</td></tr><tr><td><code>data.accepted</code></td><td class='ty'>integer</td><td class='rq'></td><td></td></tr></table></div></div>
+<p class="part">驗收條件</p>
+<ul class="ac"><li>合法事件回 202</li><li><code>metadata</code> 超過 2 KB 回 400
+<code>VALIDATION_ERROR</code></li><li><strong><code>metadata</code> 含履歷內容、回答全文、逐字稿或 PII
+時拒絕寫入</strong></li><li>未知事件名不造成 500，靜默忽略或回 400</li></ul>
+<p class="part">失敗情況</p>
+<div class="scroll-x"><table><tr><th style="width:32%">code</th><th style="width:10%">HTTP</th><th style="width:32%">messageKey</th><th style="width:10%">可重試</th></tr><tr><td><code>VALIDATION_ERROR</code></td><td class='st st4'>400</td><td><code>validation_error</code></td><td class='rq'>是</td></tr><tr><td><code>ACCESS_DENIED</code></td><td class='st st4'>401</td><td><code>access_denied</code></td><td class='rq'>否</td></tr><tr><td><code>INTERNAL_ERROR</code></td><td class='st st5'>500</td><td><code>internal_error</code></td><td class='rq'>是</td></tr></table></div>
+<p class="none">非同步 endpoint 的失敗也可能發生在 job 執行期間 —— 此時 <code>POST</code> 仍回 202，錯誤出現在 <code>GET /api/jobs/{jobId}</code> 的 <code>data.error</code>，欄位與上表相同。</p>
+</div>
+  <table class="vh" style="margin-top:48px">
+    <caption>版本紀錄</caption>
+    <tr><th style="width:9%">編號</th><th style="width:15%">時間</th><th style="width:12%">人員</th><th style="width:11%">版號</th><th>說明</th></tr>
+    <tr><td>—</td><td>—</td><td>Lyon</td><td>DRAFT</td><td>尚未發布。內部審閱中，此階段的修改不列入版本紀錄。</td></tr>
+  </table>
+
+  <footer>
+    <span>reMockable · API 介面規格 · DRAFT</span>
+    <span>後端：Java 21 / Spring Boot 3.5.5 · 前端聯絡窗口：Lyon</span>
+  </footer>
+</div>

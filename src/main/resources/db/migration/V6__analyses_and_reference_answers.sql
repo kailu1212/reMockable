@@ -43,8 +43,11 @@ CREATE TABLE analyses (
 
 -- 參考答案（Spec 4.4）。
 --
--- UNIQUE (question_id, source) 而不是 UNIQUE (question_id) —— 這是刻意為了吸收
--- 一個尚未由 PM 拍板的 Spec 歧義：
+-- UNIQUE (question_id) —— 一題只會有一份參考答案（2026-09-05 與 PM 對齊，見 issue #3）。
+-- 先產生的那份即為該題的參考答案，不論來自使用者主動點擊或 A01 分析輸出，
+-- 之後不再生成第二份。source 欄位保留，僅用於記錄來源以供追溯，不影響取用邏輯。
+--
+-- 背景（原本的歧義，現已拍板為「一份」）：
 --   - AC-06：「若使用者沒有點擊『生成參考答案』，不顯示 reference answer」→ 使用者主動觸發
 --   - 但 A01 分析輸出的 priority_improvement 本身就含一個 reference_answer（Spec 4.5.4.8）
 --   - 而 4.4「參考前次答案」又說內容來源是「4.5.4.8 最優先改善欄位 - 參考答案」
@@ -65,7 +68,7 @@ CREATE TABLE reference_answers (
   model              VARCHAR(100) NOT NULL,
   created_at         DATETIME(6)  NOT NULL,
   PRIMARY KEY (id),
-  UNIQUE KEY uq_reference_answers (question_id, source),
+  UNIQUE KEY uq_reference_answers (question_id),
   CONSTRAINT fk_reference_answers_question FOREIGN KEY (question_id) REFERENCES questions (id) ON DELETE CASCADE,
   CONSTRAINT ck_reference_answers_source CHECK (source IN ('USER_REQUESTED','FROM_ANALYSIS'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

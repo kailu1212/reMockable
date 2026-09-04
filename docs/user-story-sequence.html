@@ -1,0 +1,726 @@
+<title>reMockable User Story 時序圖</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #eef2f5;
+    --surface: #ffffff;
+    --surface-2: #f6f9fb;
+    --ink: #171b21;
+    --ink-muted: #565f6e;
+    --line: #d7dee6;
+    --accent: #1f6e8c;
+    --accent-ink: #ffffff;
+    --accent-tint: #e2eef2;
+
+    --login-fg: #1f6e8c; --login-bg: #e2eef2;
+    --setup-fg: #17724f; --setup-bg: #dff1e7;
+    --text-fg: #8a5a0d; --text-bg: #f8ecd6;
+    --voice-fg: #a3324e; --voice-bg: #f8e2e8;
+    --result-fg: #5f47a0; --result-bg: #ece6f8;
+    --warn-fg: #9a4b12; --warn-bg: #fbe9d6;
+    --async-fg: #1f6e8c; --async-bg: #e2eef2;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151a;
+      --surface: #1b1f26;
+      --surface-2: #20252d;
+      --ink: #e8ecf1;
+      --ink-muted: #9aa5b4;
+      --line: #323944;
+      --accent: #74bcdb;
+      --accent-ink: #0b1116;
+      --accent-tint: #1c2c33;
+
+      --login-fg: #74bcdb; --login-bg: #1c2c33;
+      --setup-fg: #7fdcb0; --setup-bg: #16302a;
+      --text-fg: #eac878; --text-bg: #332912;
+      --voice-fg: #f2a6b8; --voice-bg: #3a1f27;
+      --result-fg: #c8b0f2; --result-bg: #2b2140;
+      --warn-fg: #f0b071; --warn-bg: #3a2812;
+      --async-fg: #74bcdb; --async-bg: #1c2c33;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #12151a;
+    --surface: #1b1f26;
+    --surface-2: #20252d;
+    --ink: #e8ecf1;
+    --ink-muted: #9aa5b4;
+    --line: #323944;
+    --accent: #74bcdb;
+    --accent-ink: #0b1116;
+    --accent-tint: #1c2c33;
+
+    --login-fg: #74bcdb; --login-bg: #1c2c33;
+    --setup-fg: #7fdcb0; --setup-bg: #16302a;
+    --text-fg: #eac878; --text-bg: #332912;
+    --voice-fg: #f2a6b8; --voice-bg: #3a1f27;
+    --result-fg: #c8b0f2; --result-bg: #2b2140;
+    --warn-fg: #f0b071; --warn-bg: #3a2812;
+    --async-fg: #74bcdb; --async-bg: #1c2c33;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Noto Sans TC", "Hiragino Sans", "PingFang TC", sans-serif;
+    line-height: 1.65;
+  }
+
+  .mono { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace; }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding: 56px 24px 96px; }
+
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 32px;
+  }
+
+  .eyebrow {
+    font-size: 12.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  h1 {
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 900;
+    margin: 0;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .lede { max-width: 64ch; color: var(--ink-muted); font-size: 15.5px; margin: 0; }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    margin-top: 4px;
+  }
+
+  .meta-row span b { color: var(--ink); font-weight: 600; }
+
+  .callout {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-fg);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 13.5px;
+    color: var(--ink);
+    margin-top: 4px;
+  }
+
+  .callout .dot {
+    flex: none;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--warn-fg);
+    margin-top: 6px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: "JetBrains Mono", monospace;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+
+  .badge.login  { color: var(--login-fg);  background: var(--login-bg); }
+  .badge.setup  { color: var(--setup-fg);  background: var(--setup-bg); }
+  .badge.text   { color: var(--text-fg);   background: var(--text-bg); }
+  .badge.voice  { color: var(--voice-fg);  background: var(--voice-bg); }
+  .badge.result { color: var(--result-fg); background: var(--result-bg); }
+  .badge.async  { color: var(--async-fg);  background: var(--async-bg); }
+
+  .toc {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 0 32px;
+    margin-bottom: 8px;
+  }
+
+  .toc a {
+    flex: none;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    text-decoration: none;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 7px 11px;
+    background: var(--surface);
+    transition: color .15s ease, border-color .15s ease;
+  }
+
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+
+  section.flow {
+    padding: 36px 0;
+    border-bottom: 1px solid var(--line);
+    scroll-margin-top: 20px;
+  }
+
+  section.flow:last-of-type { border-bottom: none; }
+
+  .flow-head { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+
+  .flow-head-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .flow-num { font-family: "JetBrains Mono", monospace; font-size: 13px; color: var(--ink-muted); }
+
+  h2 { font-size: 21px; font-weight: 700; margin: 0; text-wrap: balance; }
+
+  .blurb { max-width: 68ch; font-size: 14.5px; color: var(--ink-muted); margin: 0; }
+
+  .blurb code, .vh code {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.92em;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: var(--ink);
+  }
+
+  .verify-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--warn-fg);
+    background: var(--warn-bg);
+    border-radius: 6px;
+    padding: 4px 9px;
+    margin-top: 2px;
+    width: fit-content;
+  }
+
+  .diagram-frame {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    padding: 20px;
+    overflow-x: auto;
+  }
+
+  .diagram-frame pre.mermaid { margin: 0; min-width: max-content; }
+
+  .vh { margin-top: 18px; overflow-x: auto; }
+  .vh table { border-collapse: collapse; width: 100%; font-size: 12.5px; min-width: 640px; }
+  .vh th { background: var(--surface-2); text-align: left; font-weight: 600; }
+  .vh th, .vh td { border: 1px solid var(--line); padding: 6px 10px; vertical-align: top; }
+  .vh caption { text-align: left; font-size: 13px; font-weight: 600; padding-bottom: 8px; color: var(--ink); }
+
+  footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+</style>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="eyebrow">reMockable · User Story Sequence Diagrams</div>
+    <h1>User Story 時序圖（FE / BE / DB）</h1>
+    <p class="lede">
+      依 Figma user flow（<code class="mono">reMockable-userflow-20260901</code>）逐步驟改畫成時序圖，
+      固定只用 <b>FrontEnd / BackEnd / DB</b> 三條 lane。LLM、STT、S3、Email、Google 等外部服務
+      不另外拉 lane，收斂成 BackEnd 內部的自我呼叫與註記。
+    </p>
+    <div class="meta-row">
+      <span>狀態：<b>DRAFT · 尚未發布</b></span>
+      <span>來源：<b>Figma userflow 20260901</b></span>
+      <span>對應：<b>docs/spec.md</b> §2.5、§4</span>
+      <span>涵蓋範圍：<b>Step 0 – Step 5</b>（含 Phase 3 Google SSO）</span>
+    </div>
+    <div class="callout">
+      <span class="dot"></span>
+      <span>
+        <b>這份是內部工作稿。</b>給前端的正式交付是單一份
+        <b>《reMockable API 介面規格》</b>，這些流程圖已收錄在該文件第 3 章，
+        並與通用契約、27 支 endpoint 定義放在一起。本文件保留給 PM 與 tech lead
+        討論流程時使用，不單獨發給前端。
+      </span>
+    </div>
+  </div>
+
+  <nav class="toc">
+    <a href="#s0">非同步 Job 機制</a>
+    <a href="#s1">Step 0 登入</a>
+    <a href="#s2">Step 1–3 建立資料與選題</a>
+    <a href="#s3">Step 4 文字回答</a>
+    <a href="#s4">Step 4 語音回答</a>
+    <a href="#s5">Step 5 分析結果</a>
+  </nav>
+
+  <section class="flow" id="s0">
+    <div class="flow-head">
+      <div class="flow-head-top">
+        <span class="flow-num">共用機制</span>
+        <span class="badge async">非同步 Job</span>
+      </div>
+      <h2>非同步 Job 通用機制（所有 AI 呼叫共用）</h2>
+      <p class="blurb">
+        <b>只要那支 API 會呼叫模型，就是這個形狀。</b>前端只需要寫一次輪詢邏輯，
+        後面五張圖裡凡是標「非同步」的步驟都套用這裡，不再重複展開。
+        目前共 <b>6 支</b>：JD 解析、生成題目、新增題目、語音轉寫、參考答案、分析。
+      </p>
+    </div>
+    <div class="diagram-frame">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant FE as FrontEnd
+    participant BE as BackEnd
+    participant DB as DB
+
+    FE->>BE: POST {任一 AI endpoint}<br/>Idempotency-Key: uuid v4
+    BE->>DB: SELECT idempotency_keys
+
+    alt 相同 key 已完成
+        BE-->>FE: 回上次的同一個 jobId（不重複呼叫模型）
+    else 新請求
+        BE->>DB: INSERT idempotency_keys (IN_PROGRESS)<br/>INSERT ai_jobs (QUEUED)
+        BE-->>FE: 202 { jobId, status: QUEUED, pollAfterMs: 1500 }
+    end
+
+    Note over BE: 背景執行緒接手，HTTP 已經回完
+    BE->>BE: 呼叫 LLM / STT
+    BE->>DB: 寫入結果，UPDATE ai_jobs SET status=READY
+
+    loop 依 pollAfterMs 輪詢：1500→2000→3000→5000ms，上限 180 秒
+        FE->>BE: GET /api/jobs/{jobId}
+        BE->>DB: SELECT ai_jobs
+        alt status = QUEUED / RUNNING
+            BE-->>FE: { status, progress, pollAfterMs }
+            Note over FE: 依新的 pollAfterMs 再輪詢<br/>不要固定 1 秒打
+        else status = READY
+            BE-->>FE: { status: READY, result }
+            Note over FE: 停止輪詢，取 result
+        else status = FAILED
+            BE-->>FE: { status: FAILED, error: { code, messageKey, retryable } }
+            Note over FE: 停止輪詢，依 code 顯示文案<br/>retryable=true 才給重試按鈕
+        end
+    end
+
+    Note over FE,DB: job 結果保留 24 小時，重整頁面可用同一個 jobId 取回<br/>失敗不消耗每日新增題目額度
+</pre>
+    </div>
+  </section>
+
+  <section class="flow" id="s1">
+    <div class="flow-head">
+      <div class="flow-head-top">
+        <span class="flow-num">Step 0</span>
+        <span class="badge login">登入</span>
+      </div>
+      <h2>首頁 → 登入彈窗（Email 驗證信 / Google SSO）</h2>
+      <p class="blurb">
+        點擊「開始練習」若尚未登入，先跳登入彈窗（Spec 4.6）。Email 與 Google 兩條路徑最終都
+        匯到同一個「驗證成功」判斷；失敗會顯示提醒文字並回到登入彈窗重試。
+        這段全部是同步 API，不經過 job 機制。
+      </p>
+      <span class="verify-note">⚠ 驗證失敗分支已推斷，建議核對原圖</span>
+    </div>
+    <div class="diagram-frame">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant FE as FrontEnd
+    participant BE as BackEnd
+    participant DB as DB
+
+    Note over FE: Step 0 首頁
+    FE->>FE: 點擊「開始練習」（& 登入，若尚未登入）
+    FE->>FE: 檢查是否已成功登入
+
+    alt 已成功登入
+        Note over FE: 直接進入「是否已建立過 Mock Set」判斷
+    else 尚未登入
+        Note over FE: 顯示登入彈窗（Spec 4.6）
+
+        alt 使用 Google 帳戶登入（Phase 3）
+            FE->>FE: 導向 Google 第三方登入（OAuth）
+            FE->>BE: POST /api/auth/google { idToken }
+            BE->>BE: 驗證 Google id token
+            alt 驗證成功
+                BE->>DB: SELECT or INSERT users
+                BE-->>FE: 200 { accessToken, user }
+            else 驗證失敗
+                BE-->>FE: 401 ACCESS_DENIED
+                Note over FE: 顯示「提醒文字：請稍後再試」<br/>回到登入彈窗
+            end
+        else 使用 Email 驗證信
+            FE->>BE: POST /api/auth/email/request { email }
+            BE->>BE: 產生 token，計算 SHA-256
+            BE->>DB: INSERT auth_email_tokens (token_hash, expires_at)
+            BE-->>FE: 200 { status: sent, expiresIn: 900 }
+            Note over FE: 顯示「請查收驗證信」
+            Note over FE: 使用者於 Email 點擊連結驗證
+            FE->>BE: POST /api/auth/email/verify { token }
+            alt token 有效且未使用
+                BE->>DB: UPDATE auth_email_tokens SET consumed_at
+                BE->>DB: SELECT or INSERT users
+                BE-->>FE: 200 { accessToken, user }
+            else token 逾期／無效
+                BE-->>FE: 410 AUTH_TOKEN_EXPIRED
+                Note over FE: 顯示「提醒文字：請稍後再試」<br/>回到登入彈窗
+            end
+        end
+
+        Note over FE: 驗證成功 → 關閉彈窗
+    end
+
+    FE->>BE: GET /api/me
+    BE->>DB: SELECT users / mocksets
+    BE-->>FE: { user, hasMockset, defaultMocksetId }
+    alt 尚未建立過 Mock Set
+        Note over FE: 導向 Step 1 建立面試資料
+    else 已建立過
+        Note over FE: 導向 Step 2 選擇題型
+    end
+</pre>
+    </div>
+  </section>
+
+  <section class="flow" id="s2">
+    <div class="flow-head">
+      <div class="flow-head-top">
+        <span class="flow-num">Step 1–3</span>
+        <span class="badge setup">建立資料與選題</span>
+        <span class="badge async">含 3 支非同步</span>
+      </div>
+      <h2>建立面試資料 → 選擇題型 → 選擇題目（含每日新增額度）</h2>
+      <p class="blurb">
+        該題型題目已生成 → 不重新生成、沿用先前題目與進度；尚未生成 → 依 Step 1 的資料首次生成
+        5 題。新增題目按鈕是否 Enabled，取決於本日已新增次數是否超過 3 次。
+        <b>JD 解析、生成題目、新增題目三支都是非同步</b>，走上方共用機制。
+      </p>
+    </div>
+    <div class="diagram-frame">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant FE as FrontEnd
+    participant BE as BackEnd
+    participant DB as DB
+
+    Note over FE: Step 1 建立面試資料（Mock Set）
+    FE->>FE: 使用者上傳資料<br/>必填：JD（Text/URL）、CV/Resume（PDF）<br/>選填：Portfolio（PDF）、Additional Text ← Phase 3
+
+    rect rgba(31,110,140,0.08)
+    Note over FE,DB: ① JD 解析（非同步）
+    FE->>BE: POST /api/job-postings/parse { inputType, value }
+    BE-->>FE: 202 { jobId }
+    Note over FE,BE: 輪詢 GET /api/jobs/{jobId}
+    BE->>BE: 呼叫 LLM 解析 JD（P00）
+    BE->>DB: INSERT job_postings
+    BE-->>FE: READY { jobPostingId, extraction, extractedFieldCount, missingFields }
+    Note over FE: 擷取不到的欄位回 null，顯示「--」<br/>欄位缺漏不阻擋流程
+    end
+
+    Note over FE,DB: ② 履歷（同步，不呼叫模型）
+    FE->>BE: POST /api/resumes（multipart PDF）
+    BE->>BE: 抽取 PDF 文字
+    BE->>DB: INSERT resumes
+    BE-->>FE: 201 { resumeId }
+
+    Note over FE,DB: ③ 建立 Mock Set（同步）
+    FE->>BE: POST /api/mocksets { name, jobPostingId, resumeId }
+    BE->>DB: INSERT mocksets, mockset_sources（凍結快照 CCP）
+    BE-->>FE: 201 { mocksetId }
+    Note over BE: 快照後 JD 原網頁再改動<br/>不影響已建立的 Mock Set
+
+    Note over FE: Step 2 選擇題型<br/>自我介紹／行為問題／技術問題／文化契合
+    FE->>BE: GET /api/mocksets/{id}/question-sets?category=
+    BE->>DB: SELECT question_sets
+
+    alt 該題型題目已生成（M-07 沿用）
+        DB-->>BE: 已存在
+        BE-->>FE: 200 { exists: true, questionSet, questions[5] }
+        Note over FE: 不重新生成，顯示先前題目 & 進度
+    else 尚未生成（M-06 首次生成，非同步）
+        DB-->>BE: 無資料
+        BE-->>FE: 200 { exists: false }
+        rect rgba(31,110,140,0.08)
+        FE->>BE: POST /api/mocksets/{id}/question-sets { category }
+        BE-->>FE: 202 { jobId }
+        Note over FE,BE: 輪詢 GET /api/jobs/{jobId}（15–40 秒）
+        BE->>BE: 呼叫 LLM 生成 5 題（P01，基於凍結快照）
+        BE->>DB: INSERT question_sets, questions × 5
+        BE-->>FE: READY { questionSet, questions[5] }
+        end
+    end
+
+    Note over FE: Step 3 選擇題目
+    alt 本日新增題目 ≥ 3
+        Note over FE: 「新增題目」按鈕 Disabled
+    else 本日新增題目 未達 3
+        Note over FE: 「新增題目」按鈕 Enabled
+        FE->>FE: 使用者點擊「新增題目」
+        rect rgba(31,110,140,0.08)
+        FE->>BE: POST /api/question-sets/{id}/questions
+        BE->>DB: SELECT question_addition_quotas（today, Asia/Taipei）
+        BE-->>FE: 202 { jobId }
+        Note over FE,BE: 輪詢 GET /api/jobs/{jobId}
+        BE->>BE: 呼叫 LLM 生成 1 題（P02，與既有題目去重）
+        BE->>DB: INSERT questions (origin=ADDED)<br/>INSERT ... ON DUPLICATE KEY UPDATE used_count+1
+        BE-->>FE: READY { question, quota }
+        Note over BE: 額度只在成功寫入題目時 +1<br/>失敗不扣
+        end
+        Note over FE: 新題目 +1，回到 Step 3 題目列表
+    end
+
+    FE->>FE: 使用者選擇一題
+    Note over FE: 進入 Step 4 練習回答
+</pre>
+    </div>
+  </section>
+
+  <section class="flow" id="s3">
+    <div class="flow-head">
+      <div class="flow-head-top">
+        <span class="flow-num">Step 4</span>
+        <span class="badge text">文字回答</span>
+        <span class="badge async">含 2 支非同步</span>
+      </div>
+      <h2>練習回答 — 文字輸入模式</h2>
+      <p class="blurb">
+        90 秒倒數歸零不會自動送出——鎖定輸入欄、顯示「重新計時」。是否顯示「參考前次答案」
+        或「生成參考答案」，取決於這題是否已經練過（Step 5 判斷）。
+        <b>建立 attempt 是同步，參考答案與分析是非同步。</b>
+      </p>
+    </div>
+    <div class="diagram-frame">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant FE as FrontEnd
+    participant BE as BackEnd
+    participant DB as DB
+
+    Note over FE: Step 4 練習回答，輸入模式：文字
+
+    alt 已練過此題
+        FE->>BE: GET /api/questions/{id}/reference-answer
+        BE->>DB: SELECT reference_answers
+        BE-->>FE: 200 { referenceAnswer }
+        Note over FE: 顯示「參考前次答案」
+    else 尚未練過此題
+        FE->>FE: 使用者點擊「生成參考答案」
+        rect rgba(31,110,140,0.08)
+        FE->>BE: POST /api/questions/{id}/reference-answer
+        BE-->>FE: 202 { jobId }
+        Note over FE,BE: 輪詢 GET /api/jobs/{jobId}
+        BE->>BE: 呼叫 LLM 生成參考答案（P03）
+        BE->>DB: INSERT reference_answers
+        BE-->>FE: READY { referenceAnswer }
+        end
+        Note over FE: 顯示生成答案
+    end
+
+    FE->>FE: focus 文字輸入欄，開始 90 秒倒數
+    loop 輸入中，倒數未歸零
+        FE->>FE: 即時檢核字數／字元（100–2,000）
+    end
+    opt 90 秒倒數歸零
+        Note over FE: 鎖定輸入欄，顯示「重新計時」<br/>不自動送出、不自動跳轉
+        FE->>FE: 使用者點擊「重新計時」→ 清空輸入欄，恢復未計時狀態
+    end
+
+    FE->>FE: 使用者點擊「確認並開始分析」
+
+    Note over FE,DB: ① 建立 attempt（同步）
+    FE->>BE: POST /api/questions/{id}/attempts<br/>{ inputMode: TEXT, content }
+    BE->>BE: 後端再驗一次長度與字元（不可只信前端）
+    BE->>DB: INSERT attempts
+    BE-->>FE: 201 { attemptId }
+    Note over BE: 90 秒計時由前端 enforce<br/>後端無法可信驗證時間，只驗長度
+
+    rect rgba(31,110,140,0.08)
+    Note over FE,DB: ② 分析（非同步，20–45 秒）
+    FE->>BE: POST /api/attempts/{id}/analysis（無 body）
+    BE-->>FE: 202 { jobId }
+    Note over FE,BE: 輪詢 GET /api/jobs/{jobId}
+    BE->>DB: SELECT 該題是否已有完成分析
+    Note over BE: 有 → COMPARISON（A02）<br/>無 → FIRST（A01）<br/>前端不需指定
+    BE->>BE: 呼叫 LLM 進行 3-Fit 分析
+    BE->>DB: INSERT analyses
+    BE-->>FE: READY { analysis }
+    end
+    Note over FE: 進入 Step 5 分析結果
+</pre>
+    </div>
+  </section>
+
+  <section class="flow" id="s4">
+    <div class="flow-head">
+      <div class="flow-head-top">
+        <span class="flow-num">Step 4</span>
+        <span class="badge voice">語音回答</span>
+        <span class="badge async">含 2 支非同步</span>
+      </div>
+      <h2>練習回答 — 語音輸入模式</h2>
+      <p class="blurb">
+        錄音中可「取消」（丟棄音檔）；90 秒到期會強制結束並送出轉換，隱藏「重新錄製」。
+        逐字稿轉出後不可編輯，僅能「重新錄製」整段重來。
+        <b>上傳音檔後 STT 走非同步</b>，「轉換中」畫面就是輪詢期間。
+      </p>
+    </div>
+    <div class="diagram-frame">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant FE as FrontEnd
+    participant BE as BackEnd
+    participant DB as DB
+
+    Note over FE: Step 4 練習回答，輸入模式：語音
+    FE->>FE: 使用者點擊「錄音」→ 開始 90 秒倒數與錄音
+
+    alt 使用者點擊「取消錄音」
+        Note over FE: 丟棄音檔，回到未錄音狀態
+    else 點擊「完成錄音」或 90 秒到期（強制結束）
+        Note over FE: 顯示「轉換中」
+
+        rect rgba(31,110,140,0.08)
+        Note over FE,DB: ① 上傳與轉寫（非同步）
+        FE->>BE: POST /api/questions/{id}/attempts<br/>multipart { inputMode: VOICE, audio }
+        BE->>BE: 驗證 MIME / 大小，ffprobe 驗證真實長度
+        BE->>DB: 上傳 S3，INSERT attempts (transcript_status=PENDING)
+        BE-->>FE: 202 { jobId, attemptId }
+        Note over FE,BE: 輪詢 GET /api/jobs/{jobId}<br/>「轉換中」畫面即此期間
+        BE->>BE: 呼叫 STT 轉寫並校正文本
+
+        alt 轉寫成功
+            BE->>DB: UPDATE attempts SET content,<br/>transcript_status=CONFIRMED
+            BE-->>FE: READY { attempt, transcript }
+            Note over FE: 顯示語音逐字稿（不可編輯）
+        else 轉寫失敗／無可辨識語音
+            BE-->>FE: FAILED { code: STT_FAILED, retryable: true }
+            Note over FE: 提供「重新錄音」或「切換文字模式」
+        end
+        end
+
+        opt 使用者點擊「重新錄製」
+            Note over FE: 捨棄本次逐字稿，回到錄音狀態
+        end
+    end
+
+    FE->>FE: 使用者點擊「確認並開始分析」
+
+    rect rgba(31,110,140,0.08)
+    Note over FE,DB: ② 分析（非同步，與文字模式完全相同）
+    FE->>BE: POST /api/attempts/{id}/analysis
+    BE-->>FE: 202 { jobId }
+    Note over FE,BE: 輪詢 GET /api/jobs/{jobId}
+    BE->>BE: 呼叫 LLM 進行 3-Fit 分析
+    BE->>DB: INSERT analyses
+    BE-->>FE: READY { analysis }
+    end
+    Note over BE: deliveryFit 只評文法與句構<br/>不評發音、腔調、語速 —— 模型只拿到逐字稿
+    Note over FE: 進入 Step 5 分析結果
+</pre>
+    </div>
+  </section>
+
+  <section class="flow" id="s5">
+    <div class="flow-head">
+      <div class="flow-head-top">
+        <span class="flow-num">Step 5</span>
+        <span class="badge result">分析結果</span>
+      </div>
+      <h2>分析結果與後續動作</h2>
+      <p class="blurb">
+        已練過的題目會多跑一次「前後次回答比較」，產出「這次進步了哪裡」。三個後續動作
+        （再練一次／重選題型／上一步）都回到練習迴圈，不是終點頁。
+        <b>比較不是另一支 API</b> —— 後端在同一個分析 job 內判斷，前端不需指定。
+      </p>
+    </div>
+    <div class="diagram-frame">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant FE as FrontEnd
+    participant BE as BackEnd
+    participant DB as DB
+
+    Note over FE,DB: 承接 Step 4 的分析 job（同一個 jobId，非另一支 API）
+
+    BE->>DB: SELECT 該題是否已有完成分析
+
+    alt 首次作答（A01）
+        BE->>BE: 呼叫 LLM 分析：3-Fit + 最優先改善
+        BE->>DB: INSERT analyses (analysis_type=FIRST)
+        BE-->>FE: READY { analysis }
+        Note over FE: 顯示紅/黃/綠、3-Fit、優先改善建議<br/>priorityImprovement 含 referenceAnswer
+    else 已練過此題（A02）
+        BE->>DB: SELECT 前次已完成的 attempt 與 analysis
+        BE->>BE: 呼叫 LLM 比較前後次回答
+        BE->>DB: INSERT analyses (analysis_type=COMPARISON)
+        BE-->>FE: READY { analysis, comparison }
+        Note over FE: 額外顯示前次回答紀錄、這次進步了哪裡<br/>A02 不回 referenceAnswer（讓使用者用自己的話練）
+    end
+
+    Note over FE: comparison.improved 可能是空陣列<br/>要顯示「這次沒有明顯改善」而不是壞掉
+
+    opt 分析失敗
+        BE-->>FE: FAILED { code: ANALYSIS_UNAVAILABLE, retryable: true }
+        Note over FE: 留在練習頁，保留原有回答與前次分析<br/>不顯示假資料、不覆蓋已成功的結果
+    end
+
+    alt 使用者點擊「再練一次」
+        Note over FE: 回到同一題，Step 4
+    else 使用者點擊「重選題型」
+        Note over FE: 同題型下一題，回到 Step 4
+    else 使用者點擊「上一步」
+        Note over FE: 回到 Step 2 選擇題型
+    end
+</pre>
+    </div>
+  </section>
+
+  <div class="vh">
+    <table>
+      <caption>版本紀錄</caption>
+      <tr><th style="width:9%">編號</th><th style="width:15%">時間</th><th style="width:12%">人員</th><th style="width:11%">版號</th><th>說明</th></tr>
+      <tr><td>—</td><td>—</td><td>Lyon</td><td>DRAFT</td><td>尚未發布。內部審閱中，此階段的修改不列入版本紀錄。</td></tr>
+    </table>
+  </div>
+
+  <footer>
+    <span>reMockable Backend · 內部工作稿 · DRAFT</span>
+    <span>資料來源：Figma userflow 20260901，對照 <code class="mono">docs/spec.md</code> §2.5</span>
+  </footer>
+
+</div>
