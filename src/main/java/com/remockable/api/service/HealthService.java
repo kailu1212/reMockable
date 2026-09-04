@@ -1,8 +1,7 @@
 package com.remockable.api.service;
 
-import com.remockable.api.common.RequestContext;
 import com.remockable.api.config.AppProperties;
-import com.remockable.api.model.dto.HealthResponse;
+import com.remockable.api.model.dto.HealthResp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -27,25 +26,24 @@ public class HealthService {
             @Value("${remockable.providers.stt.api-key:}") String sttApiKey) {
         this.properties = properties;
         this.version = version;
-        // 只回報「有沒有設定」，絕不回報金鑰本身或其片段。
+        // 只回報「有沒有設定」，絕不回報金鑰本身或其片段（Spec §13.1）。
         this.llmConfigured = !llmApiKey.isBlank();
         this.sttConfigured = !sttApiKey.isBlank();
     }
 
-    public HealthResponse check() {
-        Map<String, HealthResponse.Provider> providers = new LinkedHashMap<>();
-        providers.put("llm", new HealthResponse.Provider(llmConfigured));
-        providers.put("stt", new HealthResponse.Provider(sttConfigured));
+    public HealthResp check() {
+        Map<String, HealthResp.Provider> providers = new LinkedHashMap<>();
+        providers.put("llm", new HealthResp.Provider(llmConfigured));
+        providers.put("stt", new HealthResp.Provider(sttConfigured));
 
         AppProperties.Limits limits = properties.limits();
-        return new HealthResponse(
+        return new HealthResp(
                 "ok",
                 "remockable-api",
                 version,
-                RequestContext.getRequestId(),
                 Duration.between(STARTED_AT, Instant.now()).toSeconds(),
                 providers,
-                new HealthResponse.Limits(
+                new HealthResp.Limits(
                         limits.maxResumeBytes(),
                         limits.maxAudioBytes(),
                         limits.maxAnswerSeconds(),

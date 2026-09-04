@@ -1,7 +1,7 @@
 package com.remockable.api.exception;
 
 import com.remockable.api.common.RequestContext;
-import com.remockable.api.model.dto.ErrorResponse;
+import com.remockable.api.model.dto.ErrorResp;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -16,65 +16,65 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
- * 把所有例外轉成統一的錯誤格式（docs/01-api-interface.md §1.3）。
+ * 把所有例外轉成統一的 {@link ErrorResp}。
  *
- * <p>刻意不回傳例外訊息給前端：訊息可能含內部路徑或 SQL 片段。
- * 前端需要的只有 {@code code} 與 {@code message_key}。
+ * <p>刻意不把例外訊息回給前端：它可能含內部路徑或 SQL 片段。
+ * 前端需要的只有 {@code code}、{@code messageKey} 與 {@code retryable}。
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(AppException.class)
-    public ResponseEntity<ErrorResponse> handleApp(AppException ex) {
-        ErrorCode code = ex.getCode();
-        if (code.getStatus().is5xxServerError()) {
-            log.error("app_error code={} detail={}", code.name(), ex.getMessage(), ex);
+    @ExceptionHandler(RespErr.class)
+    public ResponseEntity<ErrorResp> handleRespErr(RespErr ex) {
+        if (ex.getStatus() >= 500) {
+            log.error("resp_err code={} status={} detail={}", ex.getCode(), ex.getStatus(), ex.getMessage(), ex);
         } else {
-            log.warn("app_error code={} detail={}", code.name(), ex.getMessage());
+            log.warn("resp_err code={} status={} detail={}", ex.getCode(), ex.getStatus(), ex.getMessage());
         }
-        return build(code, ex.getMeta());
+        return ResponseEntity.status(ex.getStatus())
+                .body(ErrorResp.of(ex.getCode(), ex.getExtra(), RequestContext.getRequestId()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleBeanValidation(MethodArgumentNotValidException ex) {
-        Map<String, Object> meta = new LinkedHashMap<>();
+    public ResponseEntity<ErrorResp> handleBeanValidation(MethodArgumentNotValidException ex) {
+        Map<String, Object> extra = new LinkedHashMap<>();
         ex.getBindingResult().getFieldErrors().stream()
                 .findFirst()
                 .ifPresent(fieldError -> {
-                    meta.put("field", fieldError.getField());
-                    meta.put("reason", fieldError.getDefaultMessage());
+                    extra.put("field", fieldError.getField());
+                    extra.put("reason", fieldError.getDefaultMessage());
                 });
-        log.warn("validation_error meta={}", meta);
-        return build(ErrorCode.VALIDATION_ERROR, meta.isEmpty() ? null : meta);
+        log.warn("validation_error extra={}", extra);
+        return build(RespErrCode.VALIDATION_ERROR, extra.isEmpty() ? null : extra);
     }
 
     @ExceptionHandler({HttpMessageNotReadableException.class, MissingServletRequestParameterException.class})
-    public ResponseEntity<ErrorResponse> handleMalformedRequest(Exception ex) {
+    public ResponseEntity<ErrorResp> handleMalformedRequest(Exception ex) {
         log.warn("malformed_request detail={}", ex.getMessage());
-        return build(ErrorCode.VALIDATION_ERROR, null);
+        return build(RespErrCode.VALIDATION_ERROR, null);
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<ErrorResponse> handleUploadTooLarge(MaxUploadSizeExceededException ex) {
+    public ResponseEntity<ErrorResp> handleUploadTooLarge(MaxUploadSizeExceededException ex) {
         log.warn("upload_too_large detail={}", ex.getMessage());
-        return build(ErrorCode.UPLOAD_TOO_LARGE, null);
+        return build(RespErrCode.UPLOAD_TOO_LARGE, null);
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoResource(NoResourceFoundException ex) {
-        return build(ErrorCode.NOT_FOUND, null);
+    public ResponseEntity<ErrorResp> handleNoResource(NoResourceFoundException ex) {
+        return build(RespErrCode.NOT_FOUND, null);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex) {
+    public ResponseEntity<ErrorResp> handleUnexpected(Exception ex) {
         log.error("unhandled_exception", ex);
-        return build(ErrorCode.INTERNAL_ERROR, null);
+        return build(RespErrCode.INTERNAL_ERROR, null);
     }
 
-    private ResponseEntity<ErrorResponse> build(ErrorCode code, Map<String, Object> meta) {
+    private ResponseEntity<ErrorResp> build(RespErrCode code, Map<String, Object> extra) {
         return ResponseEntity.status(code.getStatus())
-                .body(ErrorResponse.of(code, meta, RequestContext.getRequestId()));
+                .body(ErrorResp.of(code, extra, RequestContext.getRequestId()));
     }
 }

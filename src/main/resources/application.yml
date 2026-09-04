@@ -30,8 +30,7 @@ spring:
     baseline-on-migrate: true
 
   jackson:
-    # API 契約一律 snake_case（docs/openapi.yaml），Java 端維持 camelCase。
-    property-naming-strategy: SNAKE_CASE
+    # camelCase：對齊團隊既有的 CommonResp / CommonPageResp（Lombok @Data + Jackson 預設）。
     default-property-inclusion: non_null
     serialization:
       write-dates-as-timestamps: false

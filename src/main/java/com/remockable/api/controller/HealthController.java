@@ -1,6 +1,7 @@
 package com.remockable.api.controller;
 
-import com.remockable.api.model.dto.HealthResponse;
+import com.remockable.api.model.dto.CommonResp;
+import com.remockable.api.model.dto.HealthResp;
 import com.remockable.api.service.HealthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,7 +23,7 @@ public class HealthController {
     @GetMapping("/health")
     @Operation(summary = "服務與 provider 就緒狀態",
             description = "前端啟動時讀一次，取得 limits 作為驗證規則的唯一來源。")
-    public HealthResponse health() {
-        return healthService.check();
+    public CommonResp<HealthResp> health() {
+        return CommonResp.resp(healthService.check());
     }
 }
