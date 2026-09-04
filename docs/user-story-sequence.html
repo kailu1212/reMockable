@@ -724,3 +724,39 @@ sequenceDiagram
   </footer>
 
 </div>
+
+<!-- 本機直接開檔時渲染 mermaid。發布成 artifact 時平台會先接管，
+     這裡用 :not([data-claude-mermaid-claimed]) 避開已被接管的區塊，兩邊都不會重複渲染。 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.15.0/mermaid.min.js"></script>
+<script>
+(function () {
+  if (typeof mermaid === 'undefined') return;
+  var run = function () {
+    var ps = [].slice.call(
+      document.querySelectorAll('pre.mermaid:not([data-claude-mermaid-claimed])')
+    ).filter(function (p) { return p.offsetParent !== null || p.textContent.trim(); });
+    if (!ps.length) return;
+    var dark = matchMedia('(prefers-color-scheme: dark)').matches
+            && document.documentElement.dataset.theme !== 'light';
+    mermaid.initialize({
+      startOnLoad: false, securityLevel: 'loose', theme: 'base',
+      sequence: { useMaxWidth: false },
+      themeVariables: dark
+        ? { background:'#1b1f26', mainBkg:'#20252d', primaryColor:'#20252d',
+            primaryTextColor:'#e8ecf1', lineColor:'#9aa5b4', primaryBorderColor:'#4a5563' }
+        : { background:'#ffffff', mainBkg:'#ffffff', primaryColor:'#f6f9fb',
+            primaryTextColor:'#171b21', lineColor:'#565f6e', primaryBorderColor:'#7a8794' }
+    });
+    ps.forEach(function (pre, i) {
+      mermaid.render('local-m' + i, pre.textContent).then(function (r) {
+        var d = document.createElement('div');
+        d.innerHTML = r.svg;
+        d.style.overflowX = 'auto';
+        pre.replaceWith(d);
+      }).catch(function () { /* 保留原始碼，至少看得到內容 */ });
+    });
+  };
+  // 讓 artifact 平台先接管；本機沒有平台，200ms 後照跑
+  setTimeout(run, 200);
+})();
+</script>
